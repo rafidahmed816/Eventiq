@@ -1,4 +1,7 @@
 // app/_layout.tsx
+if (__DEV__) {
+  require("../../ReactotronConfig");
+}
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack } from "expo-router";
 import { useEffect, useState } from "react";

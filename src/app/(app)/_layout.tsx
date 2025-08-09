@@ -14,7 +14,7 @@ export default function AppLayout() {
       if (profile) {
         console.log("Current user role:", profile.role);
       }
-
+      
       if (profile?.role === "organizer") {
         console.log("Redirecting to organizer layout");
         router.replace("/(app)/organizer/events");
@@ -27,7 +27,6 @@ export default function AppLayout() {
       }
     }
   }, [profile, loading]);
-
 
   if (loading) {
     return (
