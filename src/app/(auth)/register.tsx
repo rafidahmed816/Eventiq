@@ -1,5 +1,5 @@
 // app/(auth)/register.tsx
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -12,9 +12,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-} from 'react-native'
-import { Link, router } from 'expo-router'
-import { authService } from '../../lib/auth'
+} from 'react-native';
+import { Link, router } from 'expo-router';
+import { Feather } from '@expo/vector-icons'; // Import the icon set
+import { authService } from '../../lib/auth';
 
 export default function RegisterScreen() {
   const [formData, setFormData] = useState({
@@ -24,26 +25,28 @@ export default function RegisterScreen() {
     fullName: '',
     phone: '',
     role: 'traveler' as 'organizer' | 'traveler',
-  })
-  const [loading, setLoading] = useState(false)
+  });
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // State for password visibility
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // State for confirm password visibility
 
   const handleRegister = async () => {
     if (!formData.email || !formData.password || !formData.fullName) {
-      Alert.alert('Error', 'Please fill in all required fields')
-      return
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match')
-      return
+      Alert.alert('Error', 'Passwords do not match');
+      return;
     }
 
     if (formData.password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters')
-      return
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
       await authService.signUp({
         email: formData.email,
@@ -51,23 +54,23 @@ export default function RegisterScreen() {
         fullName: formData.fullName,
         phone: formData.phone,
         role: formData.role,
-      })
-      
+      });
+
       Alert.alert(
-        'Success', 
+        'Success',
         'Account created successfully! Please check your email to verify your account.',
         [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }]
-      )
+      );
     } catch (error: any) {
-      Alert.alert('Registration Failed', error.message || 'Something went wrong')
+      Alert.alert('Registration Failed', error.message || 'Something went wrong');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
@@ -87,6 +90,7 @@ export default function RegisterScreen() {
                   onChangeText={(text) => setFormData({ ...formData, fullName: text })}
                   placeholder="Enter your full name"
                   autoCapitalize="words"
+                  autoComplete="name" // Autocomplete for full name
                 />
               </View>
 
@@ -100,6 +104,7 @@ export default function RegisterScreen() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  autoComplete="email" // Autocomplete for email
                 />
               </View>
 
@@ -111,6 +116,7 @@ export default function RegisterScreen() {
                   onChangeText={(text) => setFormData({ ...formData, phone: text })}
                   placeholder="Enter your phone number"
                   keyboardType="phone-pad"
+                  autoComplete="tel" // Autocomplete for phone number
                 />
               </View>
 
@@ -154,29 +160,55 @@ export default function RegisterScreen() {
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Password *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.password}
-                  onChangeText={(text) => setFormData({ ...formData, password: text })}
-                  placeholder="Create a password"
-                  secureTextEntry
-                  autoCapitalize="none"
-                />
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    value={formData.password}
+                    onChangeText={(text) => setFormData({ ...formData, password: text })}
+                    placeholder="Create a password"
+                    secureTextEntry={!showPassword} // Toggle password visibility
+                    autoCapitalize="none"
+                    autoComplete="new-password" // Autocomplete for new password
+                  />
+                  <TouchableOpacity
+                    style={styles.passwordToggle}
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    <Feather
+                      name={showPassword ? "eye" : "eye-off"}
+                      size={24}
+                      color="#666"
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Confirm Password *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.confirmPassword}
-                  onChangeText={(text) => setFormData({ ...formData, confirmPassword: text })}
-                  placeholder="Confirm your password"
-                  secureTextEntry
-                  autoCapitalize="none"
-                />
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    value={formData.confirmPassword}
+                    onChangeText={(text) => setFormData({ ...formData, confirmPassword: text })}
+                    placeholder="Confirm your password"
+                    secureTextEntry={!showConfirmPassword} // Toggle confirm password visibility
+                    autoCapitalize="none"
+                    autoComplete="new-password" // Autocomplete for new password
+                  />
+                  <TouchableOpacity
+                    style={styles.passwordToggle}
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    <Feather
+                      name={showConfirmPassword ? "eye" : "eye-off"}
+                      size={24}
+                      color="#666"
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.loginButton, loading && styles.disabledButton]}
                 onPress={handleRegister}
                 disabled={loading}
@@ -201,8 +233,9 @@ export default function RegisterScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
-  )
+  );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -255,6 +288,23 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     backgroundColor: '#FAFAFA',
+  },
+  passwordContainer: { // New style for password input with toggle icon
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    backgroundColor: '#FAFAFA',
+  },
+  passwordInput: { // New style for password TextInput to allow space for icon
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+  },
+  passwordToggle: { // New style for the eye icon touchable area
+    padding: 12,
   },
   roleButtons: {
     flexDirection: 'row',
@@ -316,6 +366,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 20, // Add some margin top to separate from the button
   },
   footerText: {
     fontSize: 16,
@@ -326,4 +377,4 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     fontWeight: '600',
   },
-})
+});

@@ -1,10 +1,10 @@
 import { View, Text } from 'react-native'
 import React from 'react'
 
-export default function search() {
+export default function attendees() {
   return (
     <View>
-      <Text>search</Text>
+      <Text>attendees</Text>
     </View>
   )
 }

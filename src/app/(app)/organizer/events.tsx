@@ -1,10 +1,12 @@
 import { View, Text } from 'react-native'
 import React from 'react'
 
-export default function search() {
+const events = () => {
   return (
     <View>
-      <Text>search</Text>
+      <Text>events</Text>
     </View>
   )
 }
+
+export default events

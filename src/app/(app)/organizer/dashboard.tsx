@@ -1,10 +1,12 @@
 import { View, Text } from 'react-native'
 import React from 'react'
 
-export default function search() {
+const dashboard = () => {
   return (
     <View>
-      <Text>search</Text>
+      <Text>dashboard</Text>
     </View>
   )
 }
+
+export default dashboard

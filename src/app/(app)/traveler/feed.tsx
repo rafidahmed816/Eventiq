@@ -1,10 +1,10 @@
 import { View, Text } from 'react-native'
 import React from 'react'
 
-export default function search() {
+export default function feed() {
   return (
     <View>
-      <Text>search</Text>
+      <Text>feed</Text>
     </View>
   )
 }

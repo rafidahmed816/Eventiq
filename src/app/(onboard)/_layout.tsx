@@ -4,7 +4,6 @@ import React from "react";
 export default function OnboardingLayout() {
   return (
     <>
-      <Stack screenOptions={{ headerShown: false }} />
       <Slot />
     </>
   );

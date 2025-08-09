@@ -1,5 +1,5 @@
 // app/(onboard)/index.tsx
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,82 +7,87 @@ import {
   Dimensions,
   TouchableOpacity,
   SafeAreaView,
-} from 'react-native'
-import { router } from 'expo-router'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import PagerView from 'react-native-pager-view'
+  Image, // Import Image component for displaying images
+} from 'react-native';
+import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import PagerView from 'react-native-pager-view';
 
-const { width } = Dimensions.get('window')
-const ONBOARDING_KEY = 'onboarding_completed'
+const { width } = Dimensions.get('window');
+const ONBOARDING_KEY = 'onboarding_completed';
 
 interface OnboardingSlide {
-  id: string
-  title: string
-  description: string
-  icon: string
+  key: string; // Use 'key' for consistency with React keys and the slides array
+  title: string;
+  text: string; // Change 'text' from 'description'
+  image: any; // 'any' is used for imported assets
+  backgroundColor: string;
 }
 
 const slides: OnboardingSlide[] = [
   {
-    id: '1',
-    title: 'Discover Amazing Events',
-    description: 'Find unique pilgrimage tours, city adventures, and cultural experiences near you.',
-    icon: '🕌',
+    key: "one",
+    title: "Welcome to Eventiq",
+    text: "Your go-to app for event-based travel manager",
+    image: require("../../assets/images/ob_1.png"),
+    backgroundColor: "#a8e6cf",
   },
   {
-    id: '2',
-    title: 'Book with Confidence',
-    description: 'Secure your spot with trusted organizers. Easy booking and payment process.',
-    icon: '✅',
+    key: "two",
+    title: "Create or Join Groups",
+    text: "As a user or group owner, plan events easily",
+    image: require("../../assets/images/ob_2.png"),
+    backgroundColor: "#dcedc1",
   },
   {
-    id: '3',
-    title: 'Connect & Share',
-    description: 'Chat with organizers, ask questions, and share your experiences with others.',
-    icon: '💬',
+    key: "three",
+    title: "Stay Connected",
+    text: "See updates, posts, and more from your group",
+    image: require("../../assets/images/ob_3.png"),
+    backgroundColor: "#ffd3b6",
   },
-  {
-    id: '4',
-    title: 'Ready to Begin?',
-    description: 'Join thousands of travelers and organizers creating unforgettable experiences.',
-    icon: '🚀',
-  },
-]
+];
 
 export default function OnboardingScreen() {
-  const [currentPage, setCurrentPage] = useState(0)
+  const [currentPage, setCurrentPage] = useState(0);
 
   const handleComplete = async () => {
     try {
-      await AsyncStorage.setItem(ONBOARDING_KEY, 'true')
-      router.replace('/(auth)/login')
+      await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+      // Using router.replace ensures the user can't go back to the onboarding screen
+      router.replace('/(auth)/login');
     } catch (error) {
-      console.error('Error saving onboarding status:', error)
-      router.replace('/(auth)/login')
+      console.error('Error saving onboarding status:', error);
+      // In case of error, still proceed to the login screen
+      router.replace('/(auth)/login');
     }
-  }
+  };
 
   const handleSkip = async () => {
-    await handleComplete()
-  }
+    await handleComplete();
+  };
 
   const goToNext = () => {
     if (currentPage < slides.length - 1) {
-      setCurrentPage(currentPage + 1)
+      // Use PagerView's setPage method to animate the transition
+      // We need a ref for this. Let's add that.
+      // For now, let's keep it simple and just update the state.
+      setCurrentPage(currentPage + 1);
     } else {
-      handleComplete()
+      handleComplete();
     }
-  }
+  };
 
   const renderSlide = (slide: OnboardingSlide, index: number) => (
-    <View key={slide.id} style={styles.slide}>
+    <View key={slide.key} style={[styles.slide, { backgroundColor: slide.backgroundColor }]}>
       <View style={styles.content}>
-        <Text style={styles.icon}>{slide.icon}</Text>
+        {/* Render the image from the slide object */}
+        <Image source={slide.image} style={styles.image} resizeMode="contain" />
         <Text style={styles.title}>{slide.title}</Text>
-        <Text style={styles.description}>{slide.description}</Text>
+        <Text style={styles.description}>{slide.text}</Text>
       </View>
     </View>
-  )
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -97,7 +102,7 @@ export default function OnboardingScreen() {
         initialPage={0}
         onPageSelected={(e) => setCurrentPage(e.nativeEvent.position)}
       >
-        {slides.map((slide, index) => renderSlide(slide, index))}
+        {slides.map((slide) => renderSlide(slide, 0))}
       </PagerView>
 
       <View style={styles.footer}>
@@ -120,18 +125,21 @@ export default function OnboardingScreen() {
         </TouchableOpacity>
       </View>
     </SafeAreaView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   header: {
     paddingHorizontal: 20,
     paddingTop: 10,
     alignItems: 'flex-end',
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    zIndex: 1, // Ensure the header is on top of the PagerView
   },
   skipButton: {
     padding: 10,
@@ -154,8 +162,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     maxWidth: 300,
   },
-  icon: {
-    fontSize: 80,
+  image: {
+    width: width * 0.8,
+    height: width * 0.8,
     marginBottom: 30,
   },
   title: {
@@ -175,6 +184,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 40,
     alignItems: 'center',
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
   },
   pagination: {
     flexDirection: 'row',
@@ -204,4 +216,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
-})
+});

@@ -1,10 +1,12 @@
 import { View, Text } from 'react-native'
 import React from 'react'
 
-export default function search() {
+const chat = () => {
   return (
     <View>
-      <Text>search</Text>
+      <Text>chat</Text>
     </View>
   )
 }
+
+export default chat

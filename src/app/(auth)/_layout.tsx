@@ -1,4 +1,3 @@
-
 // app/(auth)/_layout.tsx
 import { Stack } from 'expo-router'
 
@@ -7,8 +6,6 @@ export default function AuthLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="login" />
       <Stack.Screen name="register" />
-      {/* <Stack.Screen name="forgot-password" />
-      <Stack.Screen name="complete-profile" /> */}
     </Stack>
   )
 }
