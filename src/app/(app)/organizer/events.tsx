@@ -4,10 +4,13 @@ import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
+import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
+  Image,
   Modal,
   Platform,
   RefreshControl,
@@ -27,6 +30,9 @@ import {
   EVENT_CATEGORIES,
   fetchOrganizerEvents,
 } from "../../../lib/organizer/events";
+import { uploadEventImage } from "../../../lib/storage";
+
+const { width } = Dimensions.get("window");
 
 export default function EventsScreen() {
   const { user, profile } = useAuth();
@@ -35,6 +41,7 @@ export default function EventsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState<CreateEventData>({
@@ -42,19 +49,32 @@ export default function EventsScreen() {
     description: "",
     category: "Pilgrimage",
     start_time: new Date().toISOString(),
-    end_time: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours later
+    end_time: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
     budget_per_person: 0,
     total_seats: 1,
-    cancellation_policy: "",
+    cancellation_policy: 24, // 24 hours default
     refund_rules: "",
+    images: [],
   });
 
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
 
   useEffect(() => {
     loadEvents();
+    requestPermissions();
   }, []);
+
+  const requestPermissions = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission Required",
+        "Please grant camera roll permissions to upload images."
+      );
+    }
+  };
 
   const loadEvents = async () => {
     if (!profile?.id) return;
@@ -86,9 +106,64 @@ export default function EventsScreen() {
       end_time: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
       budget_per_person: 0,
       total_seats: 1,
-      cancellation_policy: "",
+      cancellation_policy: 24,
       refund_rules: "",
+      images: [],
     });
+    setSelectedImages([]);
+  };
+
+  const handleImagePicker = async () => {
+    if (selectedImages.length >= 5) {
+      Alert.alert(
+        "Limit Reached",
+        "You can only upload up to 5 images per event."
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: "images",
+      allowsMultipleSelection: true,
+      quality: 0.8,
+      selectionLimit: 5 - selectedImages.length,
+    });
+
+    if (!result.canceled && result.assets) {
+      const newImages = result.assets.map((asset) => asset.uri);
+      setSelectedImages((prev) => [...prev, ...newImages].slice(0, 5));
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadImages = async (eventId: string): Promise<string[]> => {
+    if (selectedImages.length === 0) return [];
+
+    setUploadingImages(true);
+    const uploadedUrls: string[] = [];
+
+    try {
+      for (let i = 0; i < selectedImages.length; i++) {
+        const imageUri = selectedImages[i];
+        const fileName = `${Date.now()}_${i}.jpg`;
+        const uploadResult = await uploadEventImage(
+          eventId,
+          imageUri,
+          fileName
+        );
+        uploadedUrls.push(uploadResult.url);
+      }
+    } catch (error) {
+      console.error("Upload images error:", error);
+      throw new Error("Failed to upload some images");
+    } finally {
+      setUploadingImages(false);
+    }
+
+    return uploadedUrls;
   };
 
   const handleCreateEvent = async () => {
@@ -99,7 +174,16 @@ export default function EventsScreen() {
 
     try {
       setCreating(true);
-      await createEvent(profile.id, formData);
+
+      // Prepare event data with selected images
+      const eventDataWithImages: CreateEventData = {
+        ...formData,
+        images: selectedImages, // Pass the local image URIs
+      };
+
+      // Create event (this will handle image upload internally)
+      await createEvent(profile.id, eventDataWithImages);
+
       setShowCreateModal(false);
       resetForm();
       await loadEvents();
@@ -186,6 +270,15 @@ export default function EventsScreen() {
             {event.spots_remaining}/{event.total_seats} seats available
           </Text>
         </View>
+
+        {event.cancellation_policy && (
+          <View style={styles.eventDetailRow}>
+            <Ionicons name="time-outline" size={16} color="#666" />
+            <Text style={styles.eventDetailText}>
+              Cancel up to {event.cancellation_policy}h before
+            </Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -195,16 +288,12 @@ export default function EventsScreen() {
     selectedDate: Date | undefined,
     isStartTime: boolean
   ) => {
-    // Hide the picker first for both platforms.
     if (isStartTime) {
       setShowStartPicker(false);
     } else {
       setShowEndPicker(false);
     }
 
-    // On Android, the event type tells us if the user picked a date or cancelled.
-    // On iOS, the behavior is different and we just check for a selected date.
-    // We only update the state if a date was actually selected.
     if ((event.type === "set" || Platform.OS === "ios") && selectedDate) {
       setFormData({
         ...formData,
@@ -213,38 +302,42 @@ export default function EventsScreen() {
     }
   };
 
-  // const showDatePickerModal = (isStartTime: boolean) => {
-  //   isStartTime ? setShowStartPicker(true) : setShowEndPicker(true);
-  // };
   const showDatePicker = (isStartTime: boolean) => {
-    const currentDate = new Date(
-      isStartTime ? formData.start_time : formData.end_time
-    );
+    if (Platform.OS === "android") {
+      const currentDate = new Date(
+        isStartTime ? formData.start_time : formData.end_time
+      );
 
-    // First pick date
-    DateTimePickerAndroid.open({
-      value: currentDate,
-      mode: "date",
-      onChange: (event, selectedDate) => {
-        if (event.type !== "set" || !selectedDate) return;
+      DateTimePickerAndroid.open({
+        value: currentDate,
+        mode: "date",
+        onChange: (event, selectedDate) => {
+          if (event.type !== "set" || !selectedDate) return;
 
-        // Then pick time
-        DateTimePickerAndroid.open({
-          value: selectedDate,
-          mode: "time",
-          is24Hour: true,
-          onChange: (event2, selectedTime) => {
-            if (event2.type === "set" && selectedTime) {
-              setFormData({
-                ...formData,
-                [isStartTime ? "start_time" : "end_time"]:
-                  selectedTime.toISOString(),
-              });
-            }
-          },
-        });
-      },
-    });
+          DateTimePickerAndroid.open({
+            value: selectedDate,
+            mode: "time",
+            is24Hour: true,
+            onChange: (event2, selectedTime) => {
+              if (event2.type === "set" && selectedTime) {
+                setFormData({
+                  ...formData,
+                  [isStartTime ? "start_time" : "end_time"]:
+                    selectedTime.toISOString(),
+                });
+              }
+            },
+          });
+        },
+      });
+    } else {
+      // iOS
+      if (isStartTime) {
+        setShowStartPicker(true);
+      } else {
+        setShowEndPicker(true);
+      }
+    }
   };
 
   if (loading) {
@@ -306,8 +399,11 @@ export default function EventsScreen() {
 
             <Text style={styles.modalTitle}>Create Event</Text>
 
-            <TouchableOpacity onPress={handleCreateEvent} disabled={creating}>
-              {creating ? (
+            <TouchableOpacity
+              onPress={handleCreateEvent}
+              disabled={creating || uploadingImages}
+            >
+              {creating || uploadingImages ? (
                 <ActivityIndicator size="small" color="#007AFF" />
               ) : (
                 <Text style={styles.modalSaveButton}>Create</Text>
@@ -316,6 +412,47 @@ export default function EventsScreen() {
           </View>
 
           <ScrollView style={styles.modalContent}>
+            {/* Images Section */}
+            <View style={styles.formGroup}>
+              <Text style={styles.formLabel}>Event Images (Max 5)</Text>
+
+              <TouchableOpacity
+                style={styles.imagePickerButton}
+                onPress={handleImagePicker}
+                disabled={selectedImages.length >= 5}
+              >
+                <Ionicons name="camera-outline" size={24} color="#007AFF" />
+                <Text style={styles.imagePickerText}>
+                  {selectedImages.length === 0
+                    ? "Add Images"
+                    : `Add More (${selectedImages.length}/5)`}
+                </Text>
+              </TouchableOpacity>
+
+              {selectedImages.length > 0 && (
+                <ScrollView horizontal style={styles.imagePreviewContainer}>
+                  {selectedImages.map((imageUri, index) => (
+                    <View key={index} style={styles.imagePreview}>
+                      <Image
+                        source={{ uri: imageUri }}
+                        style={styles.previewImage}
+                      />
+                      <TouchableOpacity
+                        style={styles.removeImageButton}
+                        onPress={() => removeImage(index)}
+                      >
+                        <Ionicons
+                          name="close-circle"
+                          size={20}
+                          color="#ff4444"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
+            </View>
+
             {/* Title */}
             <View style={styles.formGroup}>
               <Text style={styles.formLabel}>Event Title *</Text>
@@ -432,18 +569,22 @@ export default function EventsScreen() {
 
             {/* Cancellation Policy */}
             <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Cancellation Policy</Text>
+              <Text style={styles.formLabel}>Cancellation Policy (Hours)</Text>
               <TextInput
-                style={[styles.textInput, styles.textArea]}
-                value={formData.cancellation_policy}
+                style={styles.textInput}
+                value={formData.cancellation_policy?.toString() || ""}
                 onChangeText={(text) =>
-                  setFormData({ ...formData, cancellation_policy: text })
+                  setFormData({
+                    ...formData,
+                    cancellation_policy: parseInt(text) || undefined,
+                  })
                 }
-                placeholder="Describe your cancellation policy..."
-                multiline
-                numberOfLines={3}
-                textAlignVertical="top"
+                placeholder="24"
+                keyboardType="numeric"
               />
+              <Text style={styles.formHint}>
+                Hours before event start when travelers can cancel
+              </Text>
             </View>
 
             {/* Refund Rules */}
@@ -464,21 +605,21 @@ export default function EventsScreen() {
           </ScrollView>
         </View>
 
-        {/* Date Pickers */}
-        {showStartPicker && (
+        {/* Date Pickers for iOS */}
+        {Platform.OS === "ios" && showStartPicker && (
           <DateTimePicker
             value={new Date(formData.start_time)}
             mode="datetime"
-            display={Platform.OS === "ios" ? "spinner" : "default"}
+            display="spinner"
             onChange={(event, date) => handleDateChange(event, date, true)}
           />
         )}
 
-        {showEndPicker && (
+        {Platform.OS === "ios" && showEndPicker && (
           <DateTimePicker
             value={new Date(formData.end_time)}
             mode="datetime"
-            display={Platform.OS === "ios" ? "spinner" : "default"}
+            display="spinner"
             onChange={(event, date) => handleDateChange(event, date, false)}
           />
         )}
@@ -633,6 +774,16 @@ const styles = StyleSheet.create({
     color: "#007AFF",
     fontWeight: "600",
   },
+  creatingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  creatingText: {
+    fontSize: 14,
+    color: "#007AFF",
+    fontWeight: "600",
+  },
   modalContent: {
     flex: 1,
     padding: 16,
@@ -645,6 +796,11 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#1a1a1a",
     marginBottom: 8,
+  },
+  formHint: {
+    fontSize: 12,
+    color: "#999",
+    marginTop: 4,
   },
   textInput: {
     backgroundColor: "white",
@@ -684,5 +840,51 @@ const styles = StyleSheet.create({
   dateButtonText: {
     fontSize: 16,
     color: "#1a1a1a",
+  },
+  imagePickerButton: {
+    backgroundColor: "white",
+    borderWidth: 2,
+    borderColor: "#007AFF",
+    borderStyle: "dashed",
+    borderRadius: 8,
+    paddingVertical: 20,
+    alignItems: "center",
+    gap: 8,
+  },
+  imagePickerDisabled: {
+    borderColor: "#ccc",
+    backgroundColor: "#f5f5f5",
+  },
+  imagePickerText: {
+    fontSize: 16,
+    color: "#007AFF",
+    fontWeight: "600",
+  },
+  imagePickerTextDisabled: {
+    color: "#ccc",
+  },
+  imagePreviewContainer: {
+    marginTop: 12,
+  },
+  imagePreview: {
+    marginRight: 12,
+    position: "relative",
+  },
+  previewImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: "absolute",
+    top: -8,
+    right: -8,
+    backgroundColor: "white",
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
 });
