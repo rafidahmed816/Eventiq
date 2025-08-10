@@ -19,16 +19,7 @@ export default function OrganizerLayout() {
         tabBarLabelStyle: { fontSize: 12, fontWeight: "500" },
       }}
     >
-      <Tabs.Screen
-        name="dashboard"
-        options={{
-          title: "Dashboard",
-          tabBarLabel: "Dashboard",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="analytics" size={size} color={color} />
-          ),
-        }}
-      />
+      
       <Tabs.Screen
         name="events"
         options={{
@@ -36,6 +27,16 @@ export default function OrganizerLayout() {
           tabBarLabel: "Events",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: "Dashboard",
+          tabBarLabel: "Dashboard",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="analytics" size={size} color={color} />
           ),
         }}
       />

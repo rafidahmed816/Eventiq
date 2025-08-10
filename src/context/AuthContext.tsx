@@ -12,14 +12,7 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  session: null,
-  user: null,
-  profile: null,
-  loading: true,
-  signOut: async () => {},
-  refreshProfile: async () => {},
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -47,12 +40,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .eq("user_id", userId)
         .single();
 
-      if (error) {
+      if (error && error.code !== "PGRST116") {
         console.error("Error fetching profile:", error);
-        return null;
       }
 
-      return data;
+      return data ?? null;
     } catch (error) {
       console.error("Profile fetch error:", error);
       return null;
@@ -66,46 +58,69 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  useEffect(() => {
-    const restoreSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
+  const handleAuthChange = async (newSession: Session | null) => {
+    try {
+      const currentUser = newSession?.user ?? null;
+      setSession(newSession);
+      setUser(currentUser);
 
-      if (data.session?.user) {
-        fetchProfile(data.session.user.id).then(setProfile || null);
-      }
-
-      setLoading(false);
-    };
-    restoreSession();
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        const profileData = await fetchProfile(session.user.id);
+      if (currentUser) {
+        const profileData = await fetchProfile(currentUser.id);
         setProfile(profileData);
       } else {
         setProfile(null);
       }
-
+    } catch (error) {
+      console.error("Auth change error:", error);
+    } finally {
       setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (isMounted) {
+          await handleAuthChange(session);
+        }
+      } catch (error) {
+        console.error("Error getting initial session:", error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (isMounted) {
+        await handleAuthChange(session);
+      }
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      isMounted = false;
+      subscription?.unsubscribe();
+    };
+  }, []); // Empty dependency array is correct here
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (error) {
       console.error("Sign out error:", error);
-      throw error;
     }
+    // Don't manually set loading here, let onAuthStateChange handle it
   };
 
   const value: AuthContextType = {

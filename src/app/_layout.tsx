@@ -2,6 +2,7 @@
 if (__DEV__) {
   require("../../ReactotronConfig");
 }
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack } from "expo-router";
 import { useEffect, useState } from "react";
@@ -12,30 +13,41 @@ import { AuthProvider, useAuth } from "../context/AuthContext";
 const ONBOARDING_KEY = "onboarding_completed";
 
 function RootLayoutContent() {
-  const { session, user, profile, loading } = useAuth();
+  const { session, user, loading } = useAuth();
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(
     null
   );
-  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(true);
 
+  // Check onboarding status only once on mount
   useEffect(() => {
+    let isMounted = true;
+
+    async function checkOnboardingStatus() {
+      try {
+        const completed = await AsyncStorage.getItem(ONBOARDING_KEY);
+        if (isMounted) {
+          setOnboardingComplete(completed === "true");
+          setIsInitializing(false);
+        }
+      } catch (error) {
+        console.error("Error checking onboarding status:", error);
+        if (isMounted) {
+          setOnboardingComplete(false);
+          setIsInitializing(false);
+        }
+      }
+    }
+
     checkOnboardingStatus();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const checkOnboardingStatus = async () => {
-    try {
-      const completed = await AsyncStorage.getItem(ONBOARDING_KEY);
-      setOnboardingComplete(completed === "true");
-    } catch (error) {
-      console.error("Error checking onboarding status:", error);
-      setOnboardingComplete(false);
-    } finally {
-      setCheckingOnboarding(false);
-    }
-  };
-
-  // Show loading spinner while checking auth and onboarding status
-  if (loading || checkingOnboarding) {
+  // Only show loading when actually initializing
+  if (loading && isInitializing) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" />
@@ -43,11 +55,18 @@ function RootLayoutContent() {
     );
   }
 
+  console.log("Current state:", {
+    loading,
+    onboardingComplete,
+    hasSession: !!session,
+    hasUser: !!user,
+  });
+
   // If onboarding not completed, show onboarding flow
   if (!onboardingComplete) {
     return (
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(onboard)" options={{ headerShown: false }} />
+        <Stack.Screen name="(onboard)" />
       </Stack>
     );
   }
@@ -56,7 +75,7 @@ function RootLayoutContent() {
   if (!session || !user) {
     return (
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" />
       </Stack>
     );
   }
@@ -64,8 +83,7 @@ function RootLayoutContent() {
   // User is authenticated and onboarded, show main app
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(app)" options={{ headerShown: false }} />
-      {/* <Stack.Screen name="logout" options={{ headerShown: false }} /> */}
+      <Stack.Screen name="(app)" />
     </Stack>
   );
 }
