@@ -1,11 +1,11 @@
 // lib/traveler/useTravelerProfile.ts
-import { useState, useEffect, useCallback } from 'react';
-import { 
-  TravelerProfileService, 
-  TravelerProfile, 
-  TravelerBooking, 
-  TravelerReview 
-} from './travelerProfile';
+import { useCallback, useEffect, useState } from "react";
+import {
+  TravelerBooking,
+  TravelerProfile,
+  TravelerProfileService,
+  TravelerReview,
+} from "./travelerProfile";
 
 export const useTravelerProfile = () => {
   const [profile, setProfile] = useState<TravelerProfile | null>(null);
@@ -19,24 +19,73 @@ export const useTravelerProfile = () => {
       const profileData = await TravelerProfileService.getTravelerProfile();
       setProfile(profileData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch profile');
+      setError(err instanceof Error ? err.message : "Failed to fetch profile");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const updateProfile = useCallback(async (updates: Partial<Pick<TravelerProfile, 'full_name' | 'phone'>>) => {
+  const updateProfile = useCallback(
+    async (
+      updates: Partial<
+        Pick<
+          TravelerProfile,
+          "full_name" | "phone" | "profile_image_url" | "profile_image_path"
+        >
+      >
+    ) => {
+      try {
+        setError(null);
+        const updatedProfile =
+          await TravelerProfileService.updateTravelerProfile(updates);
+        if (updatedProfile) {
+          setProfile(updatedProfile);
+          return true;
+        }
+        return false;
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to update profile"
+        );
+        return false;
+      }
+    },
+    []
+  );
+
+  const updateProfileImage = useCallback(async (imageUri: string) => {
     try {
       setError(null);
-      const updatedProfile = await TravelerProfileService.updateTravelerProfile(updates);
+      const updatedProfile =
+        await TravelerProfileService.updateTravelerProfileImage(imageUri);
       if (updatedProfile) {
         setProfile(updatedProfile);
-        return true;
+        return updatedProfile;
       }
-      return false;
+      return null;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update profile');
-      return false;
+      setError(
+        err instanceof Error ? err.message : "Failed to update profile image"
+      );
+      throw err;
+    }
+  }, []);
+
+  const removeProfileImage = useCallback(async () => {
+    try {
+      setError(null);
+      const updatedProfile =
+        await TravelerProfileService.removeTravelerProfileImage();
+      if (updatedProfile) {
+        setProfile(updatedProfile);
+        return updatedProfile;
+      }
+      return null;
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to remove profile image"
+      );
+      throw err;
     }
   }, []);
 
@@ -49,7 +98,9 @@ export const useTravelerProfile = () => {
     loading,
     error,
     refetch: fetchProfile,
-    updateProfile
+    updateProfile,
+    updateProfileImage,
+    removeProfileImage,
   };
 };
 
@@ -65,7 +116,7 @@ export const useTravelerBookings = () => {
       const bookingsData = await TravelerProfileService.getTravelerBookings();
       setBookings(bookingsData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch bookings');
+      setError(err instanceof Error ? err.message : "Failed to fetch bookings");
     } finally {
       setLoading(false);
     }
@@ -77,10 +128,10 @@ export const useTravelerBookings = () => {
       const success = await TravelerProfileService.cancelBooking(bookingId);
       if (success) {
         // Update local state
-        setBookings(prev => 
-          prev.map(booking => 
-            booking.id === bookingId 
-              ? { ...booking, status: 'cancelled' as const }
+        setBookings((prev) =>
+          prev.map((booking) =>
+            booking.id === bookingId
+              ? { ...booking, status: "cancelled" as const }
               : booking
           )
         );
@@ -88,7 +139,7 @@ export const useTravelerBookings = () => {
       }
       return false;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to cancel booking');
+      setError(err instanceof Error ? err.message : "Failed to cancel booking");
       return false;
     }
   }, []);
@@ -102,7 +153,7 @@ export const useTravelerBookings = () => {
     loading,
     error,
     refetch: fetchBookings,
-    cancelBooking
+    cancelBooking,
   };
 };
 
@@ -118,27 +169,36 @@ export const useTravelerReviews = () => {
       const reviewsData = await TravelerProfileService.getTravelerReviews();
       setReviews(reviewsData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch reviews');
+      setError(err instanceof Error ? err.message : "Failed to fetch reviews");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const createReview = useCallback(async (eventId: string, rating: number, comment?: string) => {
-    try {
-      setError(null);
-      const success = await TravelerProfileService.createReview(eventId, rating, comment);
-      if (success) {
-        // Refresh reviews after creating a new one
-        await fetchReviews();
-        return true;
+  const createReview = useCallback(
+    async (eventId: string, rating: number, comment?: string) => {
+      try {
+        setError(null);
+        const success = await TravelerProfileService.createReview(
+          eventId,
+          rating,
+          comment
+        );
+        if (success) {
+          // Refresh reviews after creating a new one
+          await fetchReviews();
+          return true;
+        }
+        return false;
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to create review"
+        );
+        return false;
       }
-      return false;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create review');
-      return false;
-    }
-  }, [fetchReviews]);
+    },
+    [fetchReviews]
+  );
 
   useEffect(() => {
     fetchReviews();
@@ -149,7 +209,7 @@ export const useTravelerReviews = () => {
     loading,
     error,
     refetch: fetchReviews,
-    createReview
+    createReview,
   };
 };
 
@@ -162,10 +222,13 @@ export const useTravelerConversations = () => {
     try {
       setLoading(true);
       setError(null);
-      const conversationsData = await TravelerProfileService.getTravelerConversations();
+      const conversationsData =
+        await TravelerProfileService.getTravelerConversations();
       setConversations(conversationsData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch conversations');
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch conversations"
+      );
     } finally {
       setLoading(false);
     }
@@ -179,6 +242,6 @@ export const useTravelerConversations = () => {
     conversations,
     loading,
     error,
-    refetch: fetchConversations
+    refetch: fetchConversations,
   };
 };

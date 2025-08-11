@@ -174,6 +174,16 @@ export default function OrganizerProfile() {
                 showEditIcon={!uploadingImage}
                 editable
               />
+              {/* Remove button overlays top-right of avatar */}
+              {profile.profile_image_url && (
+                <TouchableOpacity
+                  onPress={handleRemoveImage}
+                  style={styles.avatarRemoveButton}
+                  disabled={uploadingImage}
+                >
+                  <Ionicons name="trash" size={18} color="white" />
+                </TouchableOpacity>
+              )}
               {uploadingImage && (
                 <View style={styles.uploadingOverlay}>
                   <ActivityIndicator color="white" size="large" />
@@ -205,17 +215,6 @@ export default function OrganizerProfile() {
                 {profile.profile_image_url ? "Change Photo" : "Add Photo"}
               </Text>
             </TouchableOpacity>
-
-            {profile.profile_image_url && (
-              <TouchableOpacity
-                onPress={handleRemoveImage}
-                style={styles.removePhotoButton}
-                disabled={uploadingImage}
-              >
-                <Ionicons name="trash" size={16} color="white" />
-                <Text style={styles.removePhotoText}>Remove</Text>
-              </TouchableOpacity>
-            )}
           </View>
         </View>
 
@@ -423,6 +422,23 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     gap: 8,
+  },
+  avatarRemoveButton: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    backgroundColor: "#EF4444",
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
   },
   removePhotoText: {
     color: "white",

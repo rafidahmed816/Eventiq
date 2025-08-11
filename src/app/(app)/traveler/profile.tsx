@@ -12,18 +12,28 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { ImagePickerModal } from "../../../components/ImagePickerModal";
 import { LogoutButton } from "../../../components/LogoutButton";
 import { ProfileAvatar } from "../../../components/ProfileAvatar";
-import { useTravelerProfile } from '../../../lib/traveler/useTravelerProfile';
+import { useTravelerProfile } from "../../../lib/traveler/useTravelerProfile";
 
 export default function TravelerProfileScreen() {
-  const { profile, loading, error, refetch, updateProfile } = useTravelerProfile();
+  const {
+    profile,
+    loading,
+    error,
+    refetch,
+    updateProfile,
+    updateProfileImage,
+    removeProfileImage,
+  } = useTravelerProfile();
   const [stats, setStats] = useState({
     eventsBooked: 0,
     reviewsGiven: 0,
     placesVisited: 0,
   });
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [showImagePicker, setShowImagePicker] = useState(false);
 
   useEffect(() => {
     loadStats();
@@ -37,6 +47,54 @@ export default function TravelerProfileScreen() {
       reviewsGiven: 0,
       placesVisited: 0,
     });
+  };
+
+  const handleImageSelected = async (imageUri: string) => {
+    if (!profile) {
+      console.error("❌ No profile available");
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+      const updatedProfile = await updateProfileImage(imageUri);
+      if (updatedProfile) {
+        Alert.alert("Success", "Profile image updated successfully");
+      }
+    } catch (error) {
+      console.error("❌ Image update error:", error);
+      Alert.alert("Error", "Failed to update profile image");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleRemoveImage = async () => {
+    if (!profile?.profile_image_url) return;
+
+    Alert.alert(
+      "Remove Profile Image",
+      "Are you sure you want to remove your profile image?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setUploadingImage(true);
+              await removeProfileImage();
+              Alert.alert("Success", "Profile image removed successfully");
+            } catch (error) {
+              console.error("Remove image error:", error);
+              Alert.alert("Error", "Failed to remove profile image");
+            } finally {
+              setUploadingImage(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (loading && !profile) {
@@ -79,12 +137,12 @@ export default function TravelerProfileScreen() {
         <View style={styles.header}>
           <View style={styles.profileSection}>
             <ProfileAvatar
-              imageUrl={undefined}
+              imageUrl={profile?.profile_image_url}
               fullName={profile?.full_name}
               size="xlarge"
-              editable={false}
-              showEditIcon={false}
-              onPress={() => {}}
+              editable={true}
+              showEditIcon={!uploadingImage}
+              onPress={() => setShowImagePicker(true)}
             />
             {uploadingImage && (
               <View style={styles.uploadingOverlay}>
@@ -109,11 +167,10 @@ export default function TravelerProfileScreen() {
             </Text>
           </View>
 
-          {/* Remove image button is hidden since profile images aren't supported yet */}
-          {false && (
+          {profile?.profile_image_url && (
             <TouchableOpacity
               style={styles.removeImageButton}
-              onPress={() => {}}
+              onPress={handleRemoveImage}
               disabled={uploadingImage}
             >
               <Ionicons name="trash-outline" size={20} color="#EF4444" />
@@ -194,7 +251,11 @@ export default function TravelerProfileScreen() {
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.actionsGrid}>
             <TouchableOpacity style={styles.actionButton}>
-              <Ionicons name="notifications-outline" size={24} color="#3B82F6" />
+              <Ionicons
+                name="notifications-outline"
+                size={24}
+                color="#3B82F6"
+              />
               <Text style={styles.actionButtonText}>Notifications</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton}>
@@ -228,6 +289,13 @@ export default function TravelerProfileScreen() {
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
+
+      <ImagePickerModal
+        visible={showImagePicker}
+        onClose={() => setShowImagePicker(false)}
+        onImageSelected={handleImageSelected}
+        title="Update Profile Image"
+      />
     </SafeAreaView>
   );
 }
