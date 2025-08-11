@@ -1,25 +1,31 @@
-import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function OrganizerLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
-        headerShown: true,
-        headerStyle: { backgroundColor: "#007AFF" },
-        headerTintColor: "#FFFFFF",
-        headerTitleStyle: { fontWeight: "bold" },
-        tabBarActiveTintColor: "#007AFF",
-        tabBarInactiveTintColor: "#666666",
+        headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#FFFFFF",
-          height: 60,
-          paddingBottom: 5,
+          paddingBottom: insets.bottom + 10,
+          height: 60 + insets.bottom,
         },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: "500" },
+        // headerStyle: { backgroundColor: "#007AFF" },
+        // headerTintColor: "#FFFFFF",
+        // headerTitleStyle: { fontWeight: "bold" },
+        // tabBarActiveTintColor: "#007AFF",
+        // tabBarInactiveTintColor: "#666666",
+        // tabBarStyle: {
+        //   backgroundColor: "#FFFFFF",
+        //   height: 60,
+        //   paddingBottom: 5,
+        // },
+        // tabBarLabelStyle: { fontSize: 12, fontWeight: "500" },
       }}
     >
-      
       <Tabs.Screen
         name="events"
         options={{

@@ -2,25 +2,30 @@ import { Stack } from "expo-router";
 import { Tabs } from "expo-router/tabs";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { View, Text } from "react-native";
-
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 // Traveler Bottom Tabs Layout
 export default function TravelerLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
-        headerShown: true,
-        headerStyle: { backgroundColor: "#007AFF" },
-        headerTintColor: "#FFFFFF",
-        headerTitleStyle: { fontWeight: "bold" },
-        tabBarActiveTintColor: "#007AFF",
-        tabBarInactiveTintColor: "#666666",
+        headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#FFFFFF",
-          height: 60,
-          paddingBottom: 5,
+          paddingBottom: insets.bottom + 10,
+          height: 60 + insets.bottom,
         },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: "500" },
+        // headerStyle: { backgroundColor: "#007AFF" },
+        // headerTintColor: "#FFFFFF",
+        // headerTitleStyle: { fontWeight: "bold" },
+        // tabBarActiveTintColor: "#007AFF",
+        // tabBarInactiveTintColor: "#666666",
+        // tabBarStyle: {
+        //   backgroundColor: "#FFFFFF",
+        //   height: 60,
+        //   paddingBottom: 5,
+        // },
+        // tabBarLabelStyle: { fontSize: 12, fontWeight: "500" },
       }}
     >
       <Tabs.Screen
