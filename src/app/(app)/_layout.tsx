@@ -5,7 +5,6 @@ import { ActivityIndicator, View } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 
 
-
 export default function AppLayout() {
   const { profile, loading } = useAuth();
   const router = useRouter();
@@ -20,7 +19,7 @@ export default function AppLayout() {
         router.replace("/(app)/organizer/events");
       } else if (profile?.role === "traveler") {
         console.log("Redirecting to traveler layout");
-        router.replace("/(app)/traveler/feed");
+        router.replace("/(app)/traveler/events");
       } else {
         console.log("No valid role found, redirecting to login");
         router.replace("/(auth)/login");

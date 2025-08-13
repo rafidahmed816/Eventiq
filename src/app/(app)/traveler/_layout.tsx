@@ -1,6 +1,5 @@
-import { Stack } from "expo-router";
-import { Tabs } from "expo-router/tabs";
 import { Ionicons } from "@expo/vector-icons";
+import { Tabs } from "expo-router/tabs";
 import React from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 // Traveler Bottom Tabs Layout
@@ -28,13 +27,23 @@ export default function TravelerLayout() {
         // tabBarLabelStyle: { fontSize: 12, fontWeight: "500" },
       }}
     >
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="feed"
         options={{
-          title: "Discover",
+          // title: "Discover",
           tabBarLabel: "Feed",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
+          ),
+        }}
+      /> */}
+      <Tabs.Screen
+        name="events"
+        options={{
+          // title: "Events",
+          // tabBarLabel: "Events",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar" size={size} color={color} />
           ),
         }}
       />
