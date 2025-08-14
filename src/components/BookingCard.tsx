@@ -1,25 +1,16 @@
 // components/BookingCard.tsx
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import {
-  Alert,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { BookingWithEvent } from "../lib/traveler/bookings";
 
 interface BookingCardProps {
   booking: BookingWithEvent;
-  onCancel?: (bookingId: string) => void;
   onPress?: () => void;
 }
 
 export const BookingCard: React.FC<BookingCardProps> = ({
   booking,
-  onCancel,
   onPress,
 }) => {
   const getStatusColor = (status: string) => {
@@ -77,37 +68,6 @@ export const BookingCard: React.FC<BookingCardProps> = ({
       minute: "2-digit",
       hour12: true,
     });
-  };
-
-  const canCancel = () => {
-    const now = new Date();
-    const eventStart = new Date(booking.events.start_time);
-    const hoursUntilEvent =
-      (eventStart.getTime() - now.getTime()) / (1000 * 60 * 60);
-
-    // Show cancel button if event hasn't started and is within cancellation policy
-    return (
-      booking.status !== "cancelled" &&
-      eventStart > now && // Event hasn't started yet
-      hoursUntilEvent > (booking.events.cancellation_policy || 0) // Within cancellation policy
-    );
-  };
-
-  const handleCancel = () => {
-    if (!onCancel) return;
-
-    Alert.alert(
-      "Cancel Booking",
-      `Are you sure you want to cancel your booking for "${booking.events.title}"?`,
-      [
-        { text: "Keep Booking", style: "cancel" },
-        {
-          text: "Cancel Booking",
-          style: "destructive",
-          onPress: () => onCancel(booking.id),
-        },
-      ]
-    );
   };
 
   const renderImage = () => {
@@ -203,39 +163,13 @@ export const BookingCard: React.FC<BookingCardProps> = ({
             </View>
           </View>
 
-          {/* Actions */}
-          {booking.status !== "cancelled" && (
-            <View style={styles.actions}>
-              {canCancel() ? (
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={handleCancel}
-                >
-                  <Ionicons name="close-outline" size={16} color="#F44336" />
-                  <Text style={styles.cancelButtonText}>Cancel Booking</Text>
-                </TouchableOpacity>
-              ) : (
-                booking.events.cancellation_policy && (
-                  <View style={styles.cancelPolicyInfo}>
-                    <Ionicons
-                      name="information-circle-outline"
-                      size={16}
-                      color="#999"
-                    />
-                    <Text style={styles.cancelPolicyText}>
-                      Cancel up to {booking.events.cancellation_policy}h before
-                      event
-                    </Text>
-                  </View>
-                )
-              )}
-
-              <TouchableOpacity style={styles.viewButton} onPress={onPress}>
-                <Text style={styles.viewButtonText}>View Details</Text>
-                <Ionicons name="chevron-forward" size={16} color="#007AFF" />
-              </TouchableOpacity>
-            </View>
-          )}
+          {/* View Details Button */}
+          <View style={styles.actions}>
+            <TouchableOpacity style={styles.viewButton} onPress={onPress}>
+              <Text style={styles.viewButtonText}>View Details</Text>
+              <Ionicons name="chevron-forward" size={16} color="#007AFF" />
+            </TouchableOpacity>
+          </View>
         </View>
       </TouchableOpacity>
     </View>
@@ -343,52 +277,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   actions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
     paddingTop: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: "#f0f0f0",
-  },
-  cancelButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    borderRadius: moderateScaling(8),
-    backgroundColor: "#ffebee",
-  },
-  cancelButtonText: {
-    fontSize: normalizeFont(13),
-    color: "#F44336",
-    fontWeight: "500",
-  },
-  cancelPolicyInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    backgroundColor: "#f8f9fa",
-    borderRadius: moderateScaling(8),
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  cancelPolicyText: {
-    fontSize: normalizeFont(12),
-    color: "#999",
-    flex: 1,
+    marginTop: spacing.sm,
   },
   viewButton: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: spacing.xs,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: "#e3f2fd",
+    borderRadius: moderateScaling(8),
   },
   viewButtonText: {
-    fontSize: normalizeFont(13),
+    fontSize: normalizeFont(14),
     color: "#007AFF",
     fontWeight: "500",
   },

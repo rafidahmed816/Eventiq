@@ -105,7 +105,7 @@ export default function TravelerEventsScreen() {
       setRefreshing(false);
     }
   };
-
+  
   const handleSearch = async () => {
     try {
       setLoading(true);
@@ -114,7 +114,7 @@ export default function TravelerEventsScreen() {
         selectedCategory === "All" ? undefined : selectedCategory
       );
       setEvents(results);
-      setHasMore(false); // Search results don't have pagination
+      setHasMore(false); 
       setCurrentPage(1);
     } catch (error) {
       console.error("Search error:", error);

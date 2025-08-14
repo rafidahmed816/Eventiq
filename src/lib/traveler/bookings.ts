@@ -305,10 +305,26 @@ export const fetchBookingById = async (
 export const checkExistingBooking = async (
   eventId: string,
   userId: string
-): Promise<Booking | null> => {
+): Promise<BookingWithEvent | null> => {
   const { data, error } = await supabase
     .from("bookings")
-    .select("*")
+    .select(
+      `
+      *,
+      events (
+        *,
+        event_images (
+          id,
+          image_url
+        ),
+        profiles:organizer_id (
+          id,
+          full_name,
+          profile_image_url
+        )
+      )
+    `
+    )
     .eq("event_id", eventId)
     .eq("traveler_id", userId)
     .neq("status", "cancelled")
@@ -316,5 +332,5 @@ export const checkExistingBooking = async (
 
   if (error && error.code !== "PGRST116") throw error;
 
-  return data || null;
+  return (data as BookingWithEvent) || null;
 };

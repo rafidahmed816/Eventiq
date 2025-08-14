@@ -183,7 +183,6 @@ export default function BookingsScreen() {
   const renderBookingCard = ({ item }: { item: BookingWithEvent }) => (
     <BookingCard
       booking={item}
-      onCancel={handleCancelBooking}
       onPress={() => handleBookingPress(item)}
     />
   );
@@ -233,6 +232,7 @@ export default function BookingsScreen() {
             <Text style={styles.browseButtonText}>Browse Events</Text>
           </TouchableOpacity>
         ) : null}
+
       </View>
     );
   };
@@ -286,15 +286,7 @@ export default function BookingsScreen() {
         showsVerticalScrollIndicator={false}
       />
 
-      {/* Cancelling Overlay */}
-      {cancelling && (
-        <View style={styles.cancellingOverlay}>
-          <View style={styles.cancellingModal}>
-            <ActivityIndicator size="large" color="#007AFF" />
-            <Text style={styles.cancellingText}>Cancelling booking...</Text>
-          </View>
-        </View>
-      )}
+      
     </SafeAreaView>
   );
 }

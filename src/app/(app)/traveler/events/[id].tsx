@@ -7,6 +7,7 @@ import {
   Alert,
   Dimensions,
   Image,
+  InteractionManager,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,8 +15,11 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { CancelBookingButton } from "../../../../components/CancelBookingButton";
 import { useAuth } from "../../../../context/AuthContext";
 import {
+  BookingWithEvent,
+  cancelBooking,
   checkExistingBooking,
   createBooking,
 } from "../../../../lib/traveler/bookings";
@@ -23,7 +27,6 @@ import {
   fetchEventDetails,
   TravelerEvent,
 } from "../../../../lib/traveler/events";
-
 
 const { width } = Dimensions.get("window");
 const IMAGE_HEIGHT = 250;
@@ -37,6 +40,9 @@ export default function EventDetailScreen() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [seatsRequested, setSeatsRequested] = useState(1);
   const [hasExistingBooking, setHasExistingBooking] = useState(false);
+  const [existingBooking, setExistingBooking] =
+    useState<BookingWithEvent | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -52,11 +58,15 @@ export default function EventDetailScreen() {
 
       // Check if user already has a booking for this event
       if (profile?.id) {
-        const existingBooking = await checkExistingBooking(
+        const bookingData = await checkExistingBooking(
           eventData.id,
           profile.id
         );
-        setHasExistingBooking(!!existingBooking);
+        setExistingBooking(bookingData);
+        setHasExistingBooking(!!bookingData);
+
+        // Reset seat selector to 1 when loading event details
+        setSeatsRequested(1);
       }
     } catch (error) {
       console.error("Load event details error:", error);
@@ -81,17 +91,23 @@ export default function EventDetailScreen() {
       return;
     }
 
-    if (event.spots_remaining === 0) {
+    if (event.spots_remaining < seatsRequested) {
       Alert.alert(
-        "Event Full",
-        "This event is fully booked. You can try again later in case of cancellations."
+        "Not Enough Seats",
+        `Only ${event.spots_remaining} seat${
+          event.spots_remaining === 1 ? "" : "s"
+        } remaining. Please select fewer seats.`
       );
       return;
     }
 
+    const totalPrice = event.budget_per_person * seatsRequested;
+
     Alert.alert(
       "Confirm Booking",
-      `Book 1 seat for $${event.budget_per_person.toFixed(2)}?`,
+      `Book ${seatsRequested} seat${
+        seatsRequested > 1 ? "s" : ""
+      } for $${totalPrice.toFixed(2)}?`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -99,10 +115,10 @@ export default function EventDetailScreen() {
           onPress: async () => {
             try {
               setBooking(true);
-              await createBooking({
+              const newBooking = await createBooking({
                 event_id: event.id,
                 traveler_id: profile.id,
-                seats_requested: 1, // Always book 1 seat
+                seats_requested: seatsRequested,
               });
 
               // Update local event state to reflect the booking
@@ -110,31 +126,44 @@ export default function EventDetailScreen() {
                 prev
                   ? {
                       ...prev,
-                      spots_remaining: prev.spots_remaining - 1,
+                      spots_remaining: prev.spots_remaining - seatsRequested,
                     }
                   : null
               );
 
+              // Create a BookingWithEvent object for the cancel button
+              const bookingWithEvent: BookingWithEvent = {
+                ...newBooking,
+                events: {
+                  ...event,
+                  event_images: event.images || [],
+                  profiles: event.organizer,
+                },
+              };
+
+              setExistingBooking(bookingWithEvent);
               setHasExistingBooking(true);
 
-             
-
-              Alert.alert("Success", "Your booking has been confirmed!", [
-                {
-                  text: "View Bookings",
-                  onPress: () => router.push("/(app)/traveler/bookings"),
-                },
-                {
-                  text: "Stay Here",
-                  style: "cancel",
-                },
-              ]);
+              InteractionManager.runAfterInteractions(() => {
+                Alert.alert("Success", "Your booking has been confirmed!", [
+                  {
+                    text: "View Bookings",
+                    onPress: () => router.push("/(app)/traveler/bookings"),
+                  },
+                  {
+                    text: "Stay Here",
+                    style: "cancel",
+                  },
+                ]);
+              });
             } catch (error) {
               console.error("Booking error:", error);
-              Alert.alert(
-                "Error",
-                "Failed to create booking. Please try again."
-              );
+              InteractionManager.runAfterInteractions(() => {
+                Alert.alert(
+                  "Error",
+                  "Failed to create booking. Please try again."
+                );
+              });
             } finally {
               setBooking(false);
             }
@@ -142,6 +171,44 @@ export default function EventDetailScreen() {
         },
       ]
     );
+  };
+
+  const handleCancelBooking = async (bookingId: string) => {
+    if (!existingBooking) return;
+
+    try {
+      setCancelling(true);
+      await cancelBooking(bookingId);
+
+      // Update local state
+      setExistingBooking(null);
+      setHasExistingBooking(false);
+
+      // Reset seat selector to 1
+      setSeatsRequested(1);
+
+      // Update event spots - restore the number of seats that were booked
+      setEvent((prev) =>
+        prev
+          ? {
+              ...prev,
+              spots_remaining:
+                prev.spots_remaining + existingBooking.seats_requested,
+            }
+          : null
+      );
+
+      InteractionManager.runAfterInteractions(() => {
+        Alert.alert("Success", "Your booking has been cancelled successfully!");
+      });
+    } catch (error) {
+      console.error("Cancel booking error:", error);
+      InteractionManager.runAfterInteractions(() => {
+        Alert.alert("Error", "Failed to cancel booking. Please try again.");
+      });
+    } finally {
+      setCancelling(false);
+    }
   };
 
   const handleScroll = (event: any) => {
@@ -404,36 +471,88 @@ export default function EventDetailScreen() {
 
       {/* Booking Section */}
       <View style={styles.bookingSection}>
-        <View style={styles.bookingInfo}>
-          <Text style={styles.totalPrice}>
-            ${event.budget_per_person.toFixed(2)}
-          </Text>
-          <Text style={styles.priceSubtext}>1 seat</Text>
-        </View>
+        {hasExistingBooking && existingBooking ? (
+          // Show booking status and cancel button if user has a booking
+          <View style={styles.bookedContainer}>
+            <View style={styles.bookingInfo}>
+              <Text style={styles.bookedText}>You're booked!</Text>
+              <Text style={styles.priceSubtext}>
+                {existingBooking.seats_requested} seat
+                {existingBooking.seats_requested > 1 ? "s" : ""} reserved
+              </Text>
+            </View>
 
-        <TouchableOpacity
-          style={[
-            styles.bookButton,
-            (booking || event.spots_remaining === 0 || hasExistingBooking) &&
-              styles.bookButtonDisabled,
-          ]}
-          onPress={handleBooking}
-          disabled={
-            booking || event.spots_remaining === 0 || hasExistingBooking
-          }
-        >
-          {booking ? (
-            <ActivityIndicator size="small" color="white" />
-          ) : (
-            <Text style={styles.bookButtonText}>
-              {hasExistingBooking
-                ? "Already Booked"
-                : event.spots_remaining === 0
-                ? "Sold Out"
-                : "Book Now"}
-            </Text>
-          )}
-        </TouchableOpacity>
+            <CancelBookingButton
+              booking={existingBooking}
+              onCancel={handleCancelBooking}
+              disabled={cancelling}
+            />
+          </View>
+        ) : (
+          // Show booking button if no booking exists
+          <View style={styles.bookingRow}>
+            <View style={styles.bookingInfo}>
+              <Text style={styles.totalPrice}>
+                ${(event.budget_per_person * seatsRequested).toFixed(2)}
+              </Text>
+              <Text style={styles.priceSubtext}>
+                {seatsRequested} seat{seatsRequested > 1 ? "s" : ""}
+              </Text>
+            </View>
+
+            {/* Seat Selector */}
+            <View style={styles.seatSelector}>
+              <TouchableOpacity
+                style={[
+                  styles.seatButton,
+                  seatsRequested <= 1 && styles.seatButtonDisabled,
+                ]}
+                onPress={() =>
+                  setSeatsRequested(Math.max(1, seatsRequested - 1))
+                }
+                disabled={seatsRequested <= 1}
+              >
+                <Text style={styles.seatButtonText}>-</Text>
+              </TouchableOpacity>
+
+              <Text style={styles.seatCount}>{seatsRequested}</Text>
+
+              <TouchableOpacity
+                style={[
+                  styles.seatButton,
+                  seatsRequested >= event.spots_remaining &&
+                    styles.seatButtonDisabled,
+                ]}
+                onPress={() =>
+                  setSeatsRequested(
+                    Math.min(event.spots_remaining, seatsRequested + 1)
+                  )
+                }
+                disabled={seatsRequested >= event.spots_remaining}
+              >
+                <Text style={styles.seatButtonText}>+</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.bookButton,
+                (booking || event.spots_remaining === 0) &&
+                  styles.bookButtonDisabled,
+              ]}
+              onPress={handleBooking}
+              disabled={booking || event.spots_remaining === 0}
+            >
+              {booking ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Text style={styles.bookButtonText}>
+                  {event.spots_remaining === 0 ? "Sold Out" : "Book Now"}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -684,12 +803,24 @@ const styles = StyleSheet.create({
     paddingBottom: 34,
     borderTopWidth: 1,
     borderTopColor: "#f0f0f0",
+    minHeight: 90,
+  },
+  bookedContainer: {
+    flex: 1,
+    gap: 12,
+  },
+  bookingRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 16,
   },
   bookingInfo: {
     flex: 1,
+  },
+  bookedText: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#4CAF50",
   },
   totalPrice: {
     fontSize: 24,
@@ -717,6 +848,11 @@ const styles = StyleSheet.create({
   },
   seatButtonDisabled: {
     backgroundColor: "#f5f5f5",
+  },
+  seatButtonText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#007AFF",
   },
   seatCount: {
     fontSize: 16,
