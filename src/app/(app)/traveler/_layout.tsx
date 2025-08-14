@@ -47,16 +47,7 @@ export default function TravelerLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="search"
-        options={{
-          title: "Search Events",
-          tabBarLabel: "Search",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search" size={size} color={color} />
-          ),
-        }}
-      />
+      
       <Tabs.Screen
         name="bookings"
         options={{

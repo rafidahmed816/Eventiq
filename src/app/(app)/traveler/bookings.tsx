@@ -1,584 +1,458 @@
-// import React, { useState, useEffect, useCallback } from 'react';
-// import {
-//   View,
-//   Text,
-//   FlatList,
-//   StyleSheet,
-//   SafeAreaView,
-//   TouchableOpacity,
-//   Image,
-//   Alert,
-//   RefreshControl,
-//   ActivityIndicator,
-// } from 'react-native';
-// import { Stack, router } from 'expo-router';
-// import { Ionicons } from '@expo/vector-icons';
-// import { useAuth } from '../../../context/AuthContext';
-// import { fetchTravelerBookings, cancelBooking, BookingWithEvent } from '../../../lib/traveler/bookings';
+// app/(app)/traveler/bookings.tsx
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Platform,
+  RefreshControl,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { BookingCard } from "../../../components/BookingCard";
+import { useAuth } from "../../../context/AuthContext";
+import {
+  BookingWithEvent,
+  cancelBooking,
+  fetchUserBookings,
+} from "../../../lib/traveler/bookings";
 
-// export default function BookingsPage() {
-//   const { profile } = useAuth();
-//   const [bookings, setBookings] = useState<BookingWithEvent[]>([]);
-//   const [loading, setLoading] = useState(true);
-//   const [refreshing, setRefreshing] = useState(false);
-//   const [selectedTab, setSelectedTab] = useState<'all' | 'upcoming' | 'past' | 'waitlist'>('all');
+type BookingFilter = "all" | "upcoming" | "past" | "cancelled";
 
-//   useEffect(() => {
-//     if (profile) {
-//       loadBookings();
-//     }
-//   }, [profile]);
+const FILTER_OPTIONS: { key: BookingFilter; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "upcoming", label: "Upcoming" },
+  { key: "past", label: "Past" },
+  { key: "cancelled", label: "Cancelled" },
+];
 
-//   const loadBookings = async () => {
-//     if (!profile) return;
+export default function BookingsScreen() {
+  const { profile } = useAuth();
+  const [bookings, setBookings] = useState<BookingWithEvent[]>([]);
+  const [filteredBookings, setFilteredBookings] = useState<BookingWithEvent[]>(
+    []
+  );
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<BookingFilter>("all");
+  const [cancelling, setCancelling] = useState<string | null>(null);
 
-//     try {
-//       setLoading(true);
-//       const data = await fetchTravelerBookings(profile.id);
-//       setBookings(data);
-//     } catch (error) {
-//       console.error('Error loading bookings:', error);
-//       Alert.alert('Error', 'Failed to load bookings');
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
+  useEffect(() => {
+    loadBookings();
+  }, []);
 
-//   const handleRefresh = useCallback(async () => {
-//     setRefreshing(true);
-//     await loadBookings();
-//     setRefreshing(false);
-//   }, [profile]);
+  useEffect(() => {
+    filterBookings();
+  }, [bookings, activeFilter]);
 
-//   const handleCancelBooking = async (bookingId: string, eventTitle: string) => {
-//     Alert.alert(
-//       'Cancel Booking',
-//       `Are you sure you want to cancel your booking for "${eventTitle}"?`,
-//       [
-//         { text: 'No', style: 'cancel' },
-//         {
-//           text: 'Yes, Cancel',
-//           style: 'destructive',
-//           onPress: async () => {
-//             try {
-//               await cancelBooking(bookingId);
-//               await loadBookings(); // Reload bookings
-//               Alert.alert('Success', 'Booking cancelled successfully');
-//             } catch (error) {
-//               console.error('Cancel booking error:', error);
-//               Alert.alert('Error', 'Failed to cancel booking');
-//             }
-//           },
-//         },
-//       ]
-//     );
-//   };
+  const loadBookings = async () => {
+    if (!profile?.id) return;
 
-//   const getFilteredBookings = () => {
-//     const now = new Date();
-    
-//     switch (selectedTab) {
-//       case 'upcoming':
-//         return bookings.filter(
-//           booking => 
-//             new Date(booking.event.start_time) > now && 
-//             booking.status !== 'cancelled'
-//         );
-//       case 'past':
-//         return bookings.filter(
-//           booking => 
-//             new Date(booking.event.end_time) < now ||
-//             booking.status === 'cancelled'
-//         );
-//       case 'waitlist':
-//         return bookings.filter(booking => booking.status === 'waitlist');
-//       default:
-//         return bookings;
-//     }
-//   };
+    try {
+      setLoading(true);
+      const data = await fetchUserBookings(profile.id);
+      setBookings(data);
+    } catch (error) {
+      console.error("Load bookings error:", error);
+      Alert.alert("Error", "Failed to load your bookings");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
-//   const getStatusColor = (status: string) => {
-//     switch (status) {
-//       case 'confirmed':
-//       case 'reserved':
-//         return '#34C759';
-//       case 'waitlist':
-//         return '#FF9500';
-//       case 'cancelled':
-//         return '#FF3B30';
-//       default:
-//         return '#666';
-//     }
-//   };
+  const filterBookings = () => {
+    const now = new Date();
 
-//   const getStatusText = (status: string) => {
-//     switch (status) {
-//       case 'reserved':
-//         return 'Reserved';
-//       case 'confirmed':
-//         return 'Confirmed';
-//       case 'waitlist':
-//         return 'Waitlisted';
-//       case 'cancelled':
-//         return 'Cancelled';
-//       default:
-//         return status;
-//     }
-//   };
+    let filtered = bookings;
 
-//   const formatDate = (dateString: string) => {
-//     return new Date(dateString).toLocaleDateString('en-US', {
-//       weekday: 'short',
-//       month: 'short',
-//       day: 'numeric',
-//       year: 'numeric',
-//     });
-//   };
+    switch (activeFilter) {
+      case "upcoming":
+        filtered = bookings.filter(
+          (booking) =>
+            new Date(booking.events.start_time) > now &&
+            booking.status !== "cancelled"
+        );
+        break;
+      case "past":
+        filtered = bookings.filter(
+          (booking) =>
+            new Date(booking.events.start_time) <= now &&
+            booking.status !== "cancelled"
+        );
+        break;
+      case "cancelled":
+        filtered = bookings.filter((booking) => booking.status === "cancelled");
+        break;
+      default:
+        filtered = bookings;
+    }
 
-//   const formatTime = (dateString: string) => {
-//     return new Date(dateString).toLocaleTimeString('en-US', {
-//       hour: '2-digit',
-//       minute: '2-digit',
-//     });
-//   };
+    setFilteredBookings(filtered);
+  };
 
-//   const formatPrice = (price: number) => {
-//     return `$${price.toLocaleString()}`;
-//   };
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadBookings();
+  };
 
-//   const canCancelBooking = (booking: BookingWithEvent) => {
-//     const now = new Date();
-//     const eventStart = new Date(booking.event.start_time);
-//     const hoursUntilEvent = (eventStart.getTime() - now.getTime()) / (1000 * 60 * 60);
-    
-//     return (
-//       booking.status !== 'cancelled' &&
-//       hoursUntilEvent > 24 && // Can cancel at least 24 hours before
-//       eventStart > now
-//     );
-//   };
+  const handleCancelBooking = async (bookingId: string) => {
+    try {
+      setCancelling(bookingId);
+      await cancelBooking(bookingId);
 
-//   const renderBookingCard = ({ item }: { item: BookingWithEvent }) => (
-//     <TouchableOpacity
-//       style={styles.bookingCard}
-//       onPress={() => router.push(`/traveler/events/${item.event.id}`)}
-//       activeOpacity={0.7}
-//     >
-//       {/* Event Image */}
-//       <View style={styles.imageContainer}>
-//         {item.event.image_url ? (
-//           <Image
-//             source={{ uri: item.event.image_url }}
-//             style={styles.eventImage}
-//             resizeMode="cover"
-//           />
-//         ) : (
-//           <View style={[styles.eventImage, styles.placeholderImage]}>
-//             <Ionicons name="image-outline" size={30} color="#C4C4C4" />
-//           </View>
-//         )}
-        
-//         {/* Status Badge */}
-//         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-//           <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
-//         </View>
-//       </View>
+      // Update local state
+      setBookings((prev) =>
+        prev.map((booking) =>
+          booking.id === bookingId
+            ? { ...booking, status: "cancelled" as const }
+            : booking
+        )
+      );
 
-//       {/* Booking Details */}
-//       <View style={styles.bookingDetails}>
-//         <Text style={styles.eventTitle} numberOfLines={2}>
-//           {item.event.title}
-//         </Text>
-        
-//         <View style={styles.eventMeta}>
-//           <View style={styles.metaRow}>
-//             <Ionicons name="calendar-outline" size={16} color="#666" />
-//             <Text style={styles.metaText}>{formatDate(item.event.start_time)}</Text>
-//           </View>
-          
-//           <View style={styles.metaRow}>
-//             <Ionicons name="time-outline" size={16} color="#666" />
-//             <Text style={styles.metaText}>
-//               {formatTime(item.event.start_time)} - {formatTime(item.event.end_time)}
-//             </Text>
-//           </View>
-          
-//           <View style={styles.metaRow}>
-//             <Ionicons name="location-outline" size={16} color="#666" />
-//             <Text style={styles.metaText}>{item.event.category}</Text>
-//           </View>
-          
-//           {item.event.organizer_name && (
-//             <View style={styles.metaRow}>
-//               <Ionicons name="person-outline" size={16} color="#666" />
-//               <Text style={styles.metaText}>{item.event.organizer_name}</Text>
-//             </View>
-//           )}
-//         </View>
+      Alert.alert("Success", "Your booking has been cancelled");
+    } catch (error) {
+      console.error("Cancel booking error:", error);
+      Alert.alert("Error", "Failed to cancel booking. Please try again.");
+    } finally {
+      setCancelling(null);
+    }
+  };
 
-//         {/* Booking Info */}
-//         <View style={styles.bookingInfo}>
-//           <View style={styles.seatsContainer}>
-//             <Text style={styles.seatsLabel}>Seats:</Text>
-//             <Text style={styles.seatsValue}>{item.seats_requested}</Text>
-//           </View>
-          
-//           <View style={styles.totalContainer}>
-//             <Text style={styles.totalLabel}>Total:</Text>
-//             <Text style={styles.totalValue}>
-//               {formatPrice(item.event.budget_per_person * item.seats_requested)}
-//             </Text>
-//           </View>
-//         </View>
+  const handleBookingPress = (booking: BookingWithEvent) => {
+    router.push(`/(app)/traveler/events/${booking.events.id}`);
+  };
 
-//         {/* Actions */}
-//         <View style={styles.actions}>
-//           <TouchableOpacity
-//             style={styles.viewButton}
-//             onPress={() => router.push(`/traveler/events/${item.event.id}`)}
-//           >
-//             <Ionicons name="eye-outline" size={16} color="#007AFF" />
-//             <Text style={styles.viewButtonText}>View Event</Text>
-//           </TouchableOpacity>
-          
-//           {canCancelBooking(item) && (
-//             <TouchableOpacity
-//               style={styles.cancelButton}
-//               onPress={() => handleCancelBooking(item.id, item.event.title)}
-//             >
-//               <Ionicons name="close-circle-outline" size={16} color="#FF3B30" />
-//               <Text style={styles.cancelButtonText}>Cancel</Text>
-//             </TouchableOpacity>
-//           )}
-//         </View>
-//       </View>
-//     </TouchableOpacity>
-//   );
+  const renderFilterTab = ({
+    item,
+  }: {
+    item: { key: BookingFilter; label: string };
+  }) => (
+    <TouchableOpacity
+      style={[
+        styles.filterTab,
+        activeFilter === item.key && styles.activeFilterTab,
+      ]}
+      onPress={() => setActiveFilter(item.key)}
+    >
+      <Text
+        style={[
+          styles.filterTabText,
+          activeFilter === item.key && styles.activeFilterTabText,
+        ]}
+      >
+        {item.label}
+      </Text>
+      {item.key !== "all" && (
+        <View style={styles.filterBadge}>
+          <Text style={styles.filterBadgeText}>{getFilterCount(item.key)}</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
 
-//   const renderTabBar = () => (
-//     <View style={styles.tabBar}>
-//       {[
-//         { key: 'all', label: 'All' },
-//         { key: 'upcoming', label: 'Upcoming' },
-//         { key: 'past', label: 'Past' },
-//         { key: 'waitlist', label: 'Waitlist' },
-//       ].map((tab) => (
-//         <TouchableOpacity
-//           key={tab.key}
-//           style={[
-//             styles.tabButton,
-//             selectedTab === tab.key && styles.activeTabButton,
-//           ]}
-//           onPress={() => setSelectedTab(tab.key as any)}
-//         >
-//           <Text
-//             style={[
-//               styles.tabButtonText,
-//               selectedTab === tab.key && styles.activeTabButtonText,
-//             ]}
-//           >
-//             {tab.label}
-//           </Text>
-//         </TouchableOpacity>
-//       ))}
-//     </View>
-//   );
+  const getFilterCount = (filter: BookingFilter) => {
+    const now = new Date();
+    switch (filter) {
+      case "upcoming":
+        return bookings.filter(
+          (booking) =>
+            new Date(booking.events.start_time) > now &&
+            booking.status !== "cancelled"
+        ).length;
+      case "past":
+        return bookings.filter(
+          (booking) =>
+            new Date(booking.events.start_time) <= now &&
+            booking.status !== "cancelled"
+        ).length;
+      case "cancelled":
+        return bookings.filter((booking) => booking.status === "cancelled")
+          .length;
+      default:
+        return 0;
+    }
+  };
 
-//   const renderEmptyState = () => (
-//     <View style={styles.emptyContainer}>
-//       <Ionicons name="ticket-outline" size={80} color="#C4C4C4" />
-//       <Text style={styles.emptyTitle}>No Bookings Found</Text>
-//       <Text style={styles.emptyMessage}>
-//         {selectedTab === 'all' 
-//           ? "You haven't made any bookings yet"
-//           : `No ${selectedTab} bookings found`
-//         }
-//       </Text>
-//       {selectedTab === 'all' && (
-//         <TouchableOpacity
-//           style={styles.exploreButton}
-//           onPress={() => router.push('/traveler/feed')}
-//         >
-//           <Text style={styles.exploreButtonText}>Explore Events</Text>
-//         </TouchableOpacity>
-//       )}
-//     </View>
-//   );
+  const renderBookingCard = ({ item }: { item: BookingWithEvent }) => (
+    <BookingCard
+      booking={item}
+      onCancel={handleCancelBooking}
+      onPress={() => handleBookingPress(item)}
+    />
+  );
 
-//   const filteredBookings = getFilteredBookings();
+  const renderEmptyState = () => {
+    const getEmptyStateContent = () => {
+      switch (activeFilter) {
+        case "upcoming":
+          return {
+            icon: "calendar-outline",
+            title: "No upcoming bookings",
+            subtitle: "Book your next adventure from the Feed tab",
+          };
+        case "past":
+          return {
+            icon: "time-outline",
+            title: "No past events",
+            subtitle: "Your completed events will appear here",
+          };
+        case "cancelled":
+          return {
+            icon: "close-circle-outline",
+            title: "No cancelled bookings",
+            subtitle: "Cancelled bookings will appear here",
+          };
+        default:
+          return {
+            icon: "bookmark-outline",
+            title: "No bookings yet",
+            subtitle: "Discover and book amazing events from the Feed tab",
+          };
+      }
+    };
 
-//   if (loading) {
-//     return (
-//       <SafeAreaView style={styles.container}>
-//         <Stack.Screen
-//           options={{
-//             headerShown: true,
-//             title: 'My Bookings',
-//             headerStyle: { backgroundColor: '#007AFF' },
-//             headerTintColor: '#FFFFFF',
-//             headerTitleStyle: { fontWeight: 'bold' },
-//           }}
-//         />
-//         <View style={styles.loadingContainer}>
-//           <ActivityIndicator size="large" color="#007AFF" />
-//           <Text style={styles.loadingText}>Loading your bookings...</Text>
-//         </View>
-//       </SafeAreaView>
-//     );
-//   }
+    const { icon, title, subtitle } = getEmptyStateContent();
 
-//   return (
-//     <SafeAreaView style={styles.container}>
-//       <Stack.Screen
-//         options={{
-//           headerShown: true,
-//           title: 'My Bookings',
-//           headerStyle: { backgroundColor: '#007AFF' },
-//           headerTintColor: '#FFFFFF',
-//           headerTitleStyle: { fontWeight: 'bold' },
-//         }}
-//       />
+    return (
+      <View style={styles.emptyState}>
+        <Ionicons name={icon as any} size={64} color="#ccc" />
+        <Text style={styles.emptyStateTitle}>{title}</Text>
+        <Text style={styles.emptyStateText}>{subtitle}</Text>
+        {activeFilter === "all" || activeFilter === "upcoming" ? (
+          <TouchableOpacity
+            style={styles.browseButton}
+            onPress={() => router.push("/(app)/traveler/events")}
+          >
+            <Text style={styles.browseButtonText}>Browse Events</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+    );
+  };
 
-//       <View style={styles.content}>
-//         {/* Tab Bar */}
-//         {renderTabBar()}
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="transparent"
+          translucent
+        />
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>Loading your bookings...</Text>
+      </SafeAreaView>
+    );
+  }
 
-//         {/* Bookings List */}
-//         <FlatList
-//           data={filteredBookings}
-//           renderItem={renderBookingCard}
-//           keyExtractor={(item) => item.id}
-//           showsVerticalScrollIndicator={false}
-//           refreshControl={
-//             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-//           }
-//           ListEmptyComponent={renderEmptyState}
-//           contentContainerStyle={
-//             filteredBookings.length === 0 ? styles.emptyContent : styles.listContent
-//           }
-//         />
-//       </View>
-//     </SafeAreaView>
-//   );
-// }
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent
+      />
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>My Bookings</Text>
+      </View>
 
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: '#F8F9FA',
-//   },
-//   content: {
-//     flex: 1,
-//   },
-//   loadingContainer: {
-//     flex: 1,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//   },
-//   loadingText: {
-//     marginTop: 16,
-//     fontSize: 16,
-//     color: '#666',
-//   },
-//   tabBar: {
-//     flexDirection: 'row',
-//     backgroundColor: '#FFFFFF',
-//     paddingHorizontal: 16,
-//     paddingVertical: 8,
-//     borderBottomWidth: 1,
-//     borderBottomColor: '#E5E5E7',
-//   },
-//   tabButton: {
-//     flex: 1,
-//     paddingVertical: 12,
-//     paddingHorizontal: 8,
-//     alignItems: 'center',
-//     borderRadius: 8,
-//     marginHorizontal: 4,
-//   },
-//   activeTabButton: {
-//     backgroundColor: '#007AFF',
-//   },
-//   tabButtonText: {
-//     fontSize: 14,
-//     fontWeight: '600',
-//     color: '#666',
-//   },
-//   activeTabButtonText: {
-//     color: '#FFFFFF',
-//   },
-//   listContent: {
-//     paddingBottom: 20,
-//   },
-//   emptyContent: {
-//     flexGrow: 1,
-//     justifyContent: 'center',
-//   },
-//   bookingCard: {
-//     backgroundColor: '#FFFFFF',
-//     marginHorizontal: 16,
-//     marginVertical: 8,
-//     borderRadius: 12,
-//     shadowColor: '#000',
-//     shadowOffset: {
-//       width: 0,
-//       height: 2,
-//     },
-//     shadowOpacity: 0.1,
-//     shadowRadius: 3.84,
-//     elevation: 5,
-//   },
-//   imageContainer: {
-//     position: 'relative',
-//     height: 120,
-//     borderTopLeftRadius: 12,
-//     borderTopRightRadius: 12,
-//     overflow: 'hidden',
-//   },
-//   eventImage: {
-//     width: '100%',
-//     height: '100%',
-//   },
-//   placeholderImage: {
-//     backgroundColor: '#F5F5F5',
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//   },
-//   statusBadge: {
-//     position: 'absolute',
-//     top: 12,
-//     right: 12,
-//     paddingHorizontal: 8,
-//     paddingVertical: 4,
-//     borderRadius: 6,
-//   },
-//   statusText: {
-//     color: '#FFFFFF',
-//     fontSize: 12,
-//     fontWeight: '600',
-//   },
-//   bookingDetails: {
-//     padding: 16,
-//   },
-//   eventTitle: {
-//     fontSize: 18,
-//     fontWeight: '700',
-//     color: '#1C1C1E',
-//     marginBottom: 8,
-//   },
-//   eventMeta: {
-//     marginBottom: 12,
-//   },
-//   metaRow: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     marginBottom: 4,
-//   },
-//   metaText: {
-//     fontSize: 14,
-//     color: '#666',
-//     marginLeft: 6,
-//   },
-//   bookingInfo: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'center',
-//     paddingVertical: 12,
-//     borderTopWidth: 1,
-//     borderTopColor: '#F0F0F0',
-//     borderBottomWidth: 1,
-//     borderBottomColor: '#F0F0F0',
-//     marginBottom: 12,
-//   },
-//   seatsContainer: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//   },
-//   seatsLabel: {
-//     fontSize: 14,
-//     color: '#666',
-//     marginRight: 4,
-//   },
-//   seatsValue: {
-//     fontSize: 16,
-//     fontWeight: '600',
-//     color: '#1C1C1E',
-//   },
-//   totalContainer: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//   },
-//   totalLabel: {
-//     fontSize: 14,
-//     color: '#666',
-//     marginRight: 4,
-//   },
-//   totalValue: {
-//     fontSize: 18,
-//     fontWeight: '700',
-//     color: '#34C759',
-//   },
-//   actions: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//   },
-//   viewButton: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     paddingVertical: 8,
-//     paddingHorizontal: 16,
-//     borderRadius: 8,
-//     backgroundColor: '#F0F8FF',
-//   },
-//   viewButtonText: {
-//     fontSize: 14,
-//     color: '#007AFF',
-//     fontWeight: '600',
-//     marginLeft: 4,
-//   },
-//   cancelButton: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     paddingVertical: 8,
-//     paddingHorizontal: 16,
-//     borderRadius: 8,
-//     backgroundColor: '#FFF0F0',
-//   },
-//   cancelButtonText: {
-//     fontSize: 14,
-//     color: '#FF3B30',
-//     fontWeight: '600',
-//     marginLeft: 4,
-//   },
-//   emptyContainer: {
-//     flex: 1,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     padding: 40,
-//   },
-//   emptyTitle: {
-//     fontSize: 24,
-//     fontWeight: '700',
-//     color: '#1C1C1E',
-//     marginTop: 16,
-//     marginBottom: 8,
-//   },
-//   emptyMessage: {
-//     fontSize: 16,
-//     color: '#666',
-//     textAlign: 'center',
-//     lineHeight: 24,
-//     marginBottom: 24,
-//   },
-//   exploreButton: {
-//     backgroundColor: '#007AFF',
-//     paddingHorizontal: 24,
-//     paddingVertical: 12,
-//     borderRadius: 8,
-//   },
-//   exploreButtonText: {
-//     color: '#FFFFFF',
-//     fontSize: 16,
-//     fontWeight: '600',
-//   },
-// });
+      {/* Filter Tabs */}
+      <View style={styles.filterWrapper}>
+        <FlatList
+          horizontal
+          data={FILTER_OPTIONS}
+          renderItem={renderFilterTab}
+          keyExtractor={(item) => item.key}
+          contentContainerStyle={styles.filterContainer}
+          showsHorizontalScrollIndicator={false}
+          decelerationRate="fast"
+          snapToAlignment="center"
+        />
+      </View>
+
+      {/* Bookings List */}
+      <FlatList
+        data={filteredBookings}
+        renderItem={renderBookingCard}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#007AFF"
+          />
+        }
+        ListEmptyComponent={renderEmptyState}
+        showsVerticalScrollIndicator={false}
+      />
+
+      {/* Cancelling Overlay */}
+      {cancelling && (
+        <View style={styles.cancellingOverlay}>
+          <View style={styles.cancellingModal}>
+            <ActivityIndicator size="large" color="#007AFF" />
+            <Text style={styles.cancellingText}>Cancelling booking...</Text>
+          </View>
+        </View>
+      )}
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f8f9fa",
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+  },
+  filterWrapper: {
+    backgroundColor: "white",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  header: {
+    backgroundColor: "white",
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === "android" ? 16 : 8,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#1a1a1a",
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 4,
+  },
+  filterContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "white",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  filterTab: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: "#f8f9fa",
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    marginRight: 6,
+    height: 32,
+  },
+  activeFilterTab: {
+    backgroundColor: "#007AFF",
+    borderColor: "#007AFF",
+  },
+  filterTabText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: "#666",
+  },
+  activeFilterTabText: {
+    color: "white",
+  },
+  filterBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    marginLeft: 4,
+  },
+  filterBadgeText: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#007AFF",
+  },
+  listContainer: {
+    paddingTop: 16,
+    paddingBottom: 20,
+    flexGrow: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: "#666",
+    marginTop: 12,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 32,
+    paddingVertical: 64,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#666",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: "#999",
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  browseButton: {
+    backgroundColor: "#007AFF",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  browseButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  cancellingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cancellingModal: {
+    backgroundColor: "white",
+    paddingHorizontal: 32,
+    paddingVertical: 24,
+    borderRadius: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  cancellingText: {
+    fontSize: 16,
+    color: "#666",
+    marginTop: 16,
+  },
+});

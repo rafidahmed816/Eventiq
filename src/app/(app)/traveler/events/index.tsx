@@ -5,8 +5,10 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Platform,
   RefreshControl,
   SafeAreaView,
+  StatusBar,
   StyleSheet,
   Text,
   View,
@@ -183,11 +185,7 @@ export default function TravelerEventsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Events</Text>
-      </View>
-
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" />
       {/* Search Bar */}
       <SearchBar
         value={searchQuery}
@@ -236,6 +234,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8f9fa",
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   header: {
     backgroundColor: "white",
@@ -243,6 +242,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
+    marginTop: Platform.OS === "android" ? 0 : 8,
   },
   headerTitle: {
     fontSize: 28,

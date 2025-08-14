@@ -4,11 +4,13 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { CreateEventModal } from "../../../../components/CreateEventModal";
 import { EventsList } from "../../../../components/EventsList";
 import { useAuth } from "../../../../context/AuthContext";
@@ -74,8 +76,8 @@ export default function EventsScreen() {
 
   const handleDeleteEvent = (eventId: string, title: string) => {
     Alert.alert(
-      "Delete Event", 
-      `Are you sure you want to delete "${title}"? This action cannot be undone.`, 
+      "Delete Event",
+      `Are you sure you want to delete "${title}"? This action cannot be undone.`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -98,15 +100,15 @@ export default function EventsScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
         <Text style={styles.loadingText}>Loading your events...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View>
@@ -115,7 +117,7 @@ export default function EventsScreen() {
             Manage your travel experiences
           </Text>
         </View>
-        
+
         <TouchableOpacity
           style={styles.createButton}
           onPress={() => setShowCreateModal(true)}
@@ -141,7 +143,7 @@ export default function EventsScreen() {
         onCreateEvent={handleCreateEvent}
         creating={creating}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -149,12 +151,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
+    paddingTop: Platform.OS === "android" ? 25 : 0, // Add extra padding for Android status bar
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#f5f5f5",
+    paddingTop: Platform.OS === "android" ? 25 : 0,
   },
   loadingText: {
     marginTop: 16,
