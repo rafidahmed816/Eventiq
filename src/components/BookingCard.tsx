@@ -24,29 +24,29 @@ export const BookingCard: React.FC<BookingCardProps> = ({
 }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'confirmed':
-        return '#4CAF50';
-      case 'waitlist':
-        return '#FF9800';
-      case 'cancelled':
-        return '#F44336';
-      case 'reserved':
-        return '#2196F3';
+      case "confirmed":
+        return "#4CAF50";
+      case "waitlist":
+        return "#FF9800";
+      case "cancelled":
+        return "#F44336";
+      case "reserved":
+        return "#2196F3";
       default:
-        return '#666';
+        return "#666";
     }
   };
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'confirmed':
-        return 'Confirmed';
-      case 'waitlist':
-        return 'Waitlisted';
-      case 'cancelled':
-        return 'Cancelled';
-      case 'reserved':
-        return 'Reserved';
+      case "confirmed":
+        return "Confirmed";
+      case "waitlist":
+        return "Waitlisted";
+      case "cancelled":
+        return "Cancelled";
+      case "reserved":
+        return "Reserved";
       default:
         return status;
     }
@@ -62,7 +62,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
     if (diffDays === 0) return "Today";
     if (diffDays === 1) return "Tomorrow";
     if (diffDays < 7) return `${diffDays} days`;
-    
+
     return date.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
@@ -82,10 +82,11 @@ export const BookingCard: React.FC<BookingCardProps> = ({
   const canCancel = () => {
     const now = new Date();
     const eventStart = new Date(booking.events.start_time);
-    const hoursUntilEvent = (eventStart.getTime() - now.getTime()) / (1000 * 60 * 60);
-    
+    const hoursUntilEvent =
+      (eventStart.getTime() - now.getTime()) / (1000 * 60 * 60);
+
     return (
-      booking.status !== 'cancelled' && 
+      booking.status !== "cancelled" &&
       hoursUntilEvent > (booking.events.cancellation_policy || 0)
     );
   };
@@ -143,9 +144,16 @@ export const BookingCard: React.FC<BookingCardProps> = ({
               <Text style={styles.categoryText}>{booking.events.category}</Text>
             </View>
           </View>
-          
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(booking.status) }]}>
-            <Text style={styles.statusText}>{getStatusText(booking.status)}</Text>
+
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: getStatusColor(booking.status) },
+            ]}
+          >
+            <Text style={styles.statusText}>
+              {getStatusText(booking.status)}
+            </Text>
           </View>
         </View>
 
@@ -154,21 +162,27 @@ export const BookingCard: React.FC<BookingCardProps> = ({
           <View style={styles.detailRow}>
             <Ionicons name="calendar-outline" size={16} color="#666" />
             <Text style={styles.detailText}>
-              {formatDate(booking.events.start_time)} • {formatTime(booking.events.start_time)}
+              {formatDate(booking.events.start_time)} •{" "}
+              {formatTime(booking.events.start_time)}
             </Text>
           </View>
 
           <View style={styles.detailRow}>
             <Ionicons name="people-outline" size={16} color="#666" />
             <Text style={styles.detailText}>
-              {booking.seats_requested} seat{booking.seats_requested > 1 ? 's' : ''}
+              {booking.seats_requested} seat
+              {booking.seats_requested > 1 ? "s" : ""}
             </Text>
           </View>
 
           <View style={styles.detailRow}>
             <Ionicons name="cash-outline" size={16} color="#666" />
             <Text style={styles.detailText}>
-              ${(booking.events.budget_per_person * booking.seats_requested).toFixed(2)} total
+              $
+              {(
+                booking.events.budget_per_person * booking.seats_requested
+              ).toFixed(2)}{" "}
+              total
             </Text>
           </View>
 
@@ -181,15 +195,18 @@ export const BookingCard: React.FC<BookingCardProps> = ({
         </View>
 
         {/* Actions */}
-        {booking.status !== 'cancelled' && (
+        {booking.status !== "cancelled" && (
           <View style={styles.actions}>
             {canCancel() && (
-              <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={handleCancel}
+              >
                 <Ionicons name="close-outline" size={16} color="#F44336" />
                 <Text style={styles.cancelButtonText}>Cancel Booking</Text>
               </TouchableOpacity>
             )}
-            
+
             <TouchableOpacity style={styles.viewButton} onPress={onPress}>
               <Text style={styles.viewButtonText}>View Details</Text>
               <Ionicons name="chevron-forward" size={16} color="#007AFF" />
@@ -201,84 +218,95 @@ export const BookingCard: React.FC<BookingCardProps> = ({
   );
 };
 
+import {
+  moderateScaling,
+  normalizeFont,
+  scale,
+  spacing,
+} from "../utils/scaling";
+
 const styles = StyleSheet.create({
-  card: {
+  container: {
     backgroundColor: "white",
-    borderRadius: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
+    borderRadius: moderateScaling(12),
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: scale(2),
+    },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: scale(3.84),
+    elevation: 5,
+  },
+  card: {
     overflow: "hidden",
-    flexDirection: "row",
   },
   eventImage: {
-    width: 100,
-    height: 120,
+    width: scale(100),
+    height: scale(120),
   },
   imagePlaceholder: {
-    width: 100,
-    height: 120,
+    width: scale(100),
+    height: scale(120),
     backgroundColor: "#f5f5f5",
     justifyContent: "center",
     alignItems: "center",
   },
   content: {
     flex: 1,
-    padding: 16,
+    padding: spacing.md,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 12,
+    marginBottom: spacing.sm,
   },
   titleSection: {
     flex: 1,
-    marginRight: 12,
+    marginRight: spacing.sm,
   },
   title: {
-    fontSize: 16,
+    fontSize: normalizeFont(16),
     fontWeight: "600",
     color: "#1a1a1a",
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   categoryBadge: {
     backgroundColor: "#e3f2fd",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: moderateScaling(8),
     alignSelf: "flex-start",
   },
   categoryText: {
-    fontSize: 11,
+    fontSize: normalizeFont(11),
     color: "#1976d2",
     fontWeight: "500",
   },
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: moderateScaling(12),
   },
   statusText: {
-    fontSize: 12,
+    fontSize: normalizeFont(12),
     color: "white",
     fontWeight: "600",
   },
   details: {
-    gap: 6,
-    marginBottom: 12,
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
   },
   detailRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: spacing.xs,
   },
   detailText: {
-    fontSize: 13,
+    fontSize: normalizeFont(13),
     color: "#666",
     flex: 1,
   },
@@ -286,30 +314,30 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 8,
-    borderTopWidth: 1,
+    paddingTop: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: "#f0f0f0",
   },
   cancelButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    borderRadius: 8,
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: moderateScaling(8),
     backgroundColor: "#ffebee",
   },
   cancelButtonText: {
-    fontSize: 13,
+    fontSize: normalizeFont(13),
     color: "#F44336",
     fontWeight: "500",
   },
   viewButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
   },
   viewButtonText: {
     fontSize: 13,

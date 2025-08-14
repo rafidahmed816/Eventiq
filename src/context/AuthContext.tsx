@@ -1,4 +1,5 @@
 // context/AuthContext.tsx
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Session, User } from "@supabase/supabase-js";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Profile, supabase } from "../lib/supabase";
@@ -82,12 +83,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const initializeAuth = async () => {
       try {
+        // Get initial session
         const {
           data: { session },
         } = await supabase.auth.getSession();
+
         if (isMounted) {
           await handleAuthChange(session);
         }
+
+        // Set up session refresh
+        await supabase.auth.startAutoRefresh();
       } catch (error) {
         console.error("Error getting initial session:", error);
       } finally {
@@ -115,12 +121,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      await supabase.auth.stopAutoRefresh();
+      await supabase.auth.signOut();
+      await AsyncStorage.removeItem("eventiq-auth");
     } catch (error) {
       console.error("Sign out error:", error);
+      throw error;
     }
-    // Don't manually set loading here, let onAuthStateChange handle it
   };
 
   const value: AuthContextType = {

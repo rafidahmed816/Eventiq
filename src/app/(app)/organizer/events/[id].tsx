@@ -16,6 +16,7 @@ import {
   Platform,
   RefreshControl,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -325,7 +326,13 @@ export default function EventDetailScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent
+      />
       {/* Header */}
+      <View style={styles.statusBarSpace} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#007AFF" />
@@ -691,6 +698,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8f9fa",
   },
+  statusBarSpace: {
+    height: Platform.OS === "android" ? StatusBar.currentHeight : 44,
+    backgroundColor: "white",
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -698,7 +709,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: "white",
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#e0e0e0",
   },
   backBtn: {

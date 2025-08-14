@@ -78,68 +78,75 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onDelete }) => {
   );
 };
 
+import {
+  moderateScaling,
+  normalizeFont,
+  scale,
+  spacing,
+} from "../utils/scaling";
+
 const styles = StyleSheet.create({
   eventCard: {
     backgroundColor: "white",
-    marginHorizontal: 16,
-    marginVertical: 8,
-    padding: 16,
-    borderRadius: 12,
+    marginHorizontal: spacing.md,
+    marginVertical: spacing.sm,
+    padding: spacing.md,
+    borderRadius: moderateScaling(12),
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: scale(2) },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: scale(4),
     elevation: 3,
   },
   eventHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 12,
+    marginBottom: spacing.sm,
   },
   eventTitleContainer: {
     flex: 1,
-    marginRight: 12,
+    marginRight: spacing.sm,
   },
   eventTitle: {
-    fontSize: 18,
+    fontSize: normalizeFont(18),
     fontWeight: "bold",
     color: "#333",
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   categoryBadge: {
     backgroundColor: "#E3F2FD",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: moderateScaling(12),
     alignSelf: "flex-start",
   },
   categoryText: {
-    fontSize: 12,
+    fontSize: normalizeFont(12),
     color: "#1976D2",
     fontWeight: "500",
   },
   deleteButton: {
-    padding: 8,
-    borderRadius: 8,
+    padding: spacing.sm,
+    borderRadius: moderateScaling(8),
     backgroundColor: "#FFEBEE",
   },
   eventDescription: {
-    fontSize: 14,
+    fontSize: normalizeFont(14),
     color: "#666",
-    marginBottom: 16,
-    lineHeight: 20,
+    marginBottom: spacing.md,
+    lineHeight: scale(20),
   },
   eventDetails: {
-    gap: 8,
+    gap: spacing.sm,
   },
   eventDetailRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.sm,
   },
   eventDetailText: {
-    fontSize: 14,
+    fontSize: normalizeFont(14),
     color: "#666",
     flex: 1,
   },

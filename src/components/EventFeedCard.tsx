@@ -12,9 +12,10 @@ import {
 } from "react-native";
 import { TravelerEvent } from "../lib/traveler/events";
 
-const { width } = Dimensions.get("window");
-const CARD_WIDTH = width - 32;
-const IMAGE_HEIGHT = 180;
+import { scale, spacing } from "../utils/scaling";
+
+const CARD_WIDTH = Dimensions.get("window").width - spacing.md * 2;
+const IMAGE_HEIGHT = scale(180);
 
 interface EventFeedCardProps {
   event: TravelerEvent;

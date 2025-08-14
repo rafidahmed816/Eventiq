@@ -52,23 +52,25 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
   );
 };
 
+import { moderateScaling, normalizeFont, spacing } from "../utils/scaling";
+
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "white",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#f0f0f0",
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    gap: 8,
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
   },
   categoryButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: moderateScaling(20),
     backgroundColor: "#f8f9fa",
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: "#e9ecef",
   },
   selectedCategoryButton: {
@@ -76,7 +78,7 @@ const styles = StyleSheet.create({
     borderColor: "#007AFF",
   },
   categoryText: {
-    fontSize: 14,
+    fontSize: normalizeFont(14),
     fontWeight: "500",
     color: "#666",
   },

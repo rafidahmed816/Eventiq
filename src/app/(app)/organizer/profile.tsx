@@ -219,7 +219,7 @@ export default function OrganizerProfile() {
         </View>
 
         {/* Statistics */}
-        <View style={styles.statsContainer}>
+        {/* <View style={styles.statsContainer}>
           <Text style={styles.sectionTitle}>Your Statistics</Text>
 
           <View style={styles.statsGrid}>
@@ -249,7 +249,7 @@ export default function OrganizerProfile() {
               <Text style={styles.statLabel}>Reviews</Text>
             </View>
           </View>
-        </View>
+        </View> */}
 
         {/* Profile Details */}
         <View style={styles.detailsContainer}>
@@ -298,25 +298,7 @@ export default function OrganizerProfile() {
         </View>
 
         {/* Debug Section */}
-        <View style={styles.debugContainer}>
-          <Text style={styles.sectionTitle}>Debug Tools</Text>
-
-          <TouchableOpacity
-            onPress={testDatabaseConnection}
-            style={styles.debugButton}
-          >
-            <Text style={styles.debugButtonText}>Test Database Connection</Text>
-          </TouchableOpacity>
-
-          {profile && (
-            <TouchableOpacity
-              onPress={() => testProfileUpdate(profile.id)}
-              style={styles.debugButton}
-            >
-              <Text style={styles.debugButtonText}>Test Profile Update</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+        
       </ScrollView>
 
       {/* Image Picker Modal */}

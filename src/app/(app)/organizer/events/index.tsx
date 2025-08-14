@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  StatusBar,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -109,6 +110,7 @@ export default function EventsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" />
       {/* Header */}
       <View style={styles.header}>
         <View>
@@ -151,14 +153,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
-    paddingTop: Platform.OS === "android" ? 25 : 0, // Add extra padding for Android status bar
+     // Add extra padding for Android status bar
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#f5f5f5",
-    paddingTop: Platform.OS === "android" ? 25 : 0,
+    
   },
   loadingText: {
     marginTop: 16,
