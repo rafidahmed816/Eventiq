@@ -15,11 +15,15 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../../../context/AuthContext";
-import { createBooking } from "../../../../lib/traveler/bookings";
+import {
+  checkExistingBooking,
+  createBooking,
+} from "../../../../lib/traveler/bookings";
 import {
   fetchEventDetails,
   TravelerEvent,
 } from "../../../../lib/traveler/events";
+
 
 const { width } = Dimensions.get("window");
 const IMAGE_HEIGHT = 250;
@@ -32,6 +36,7 @@ export default function EventDetailScreen() {
   const [booking, setBooking] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [seatsRequested, setSeatsRequested] = useState(1);
+  const [hasExistingBooking, setHasExistingBooking] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -44,6 +49,15 @@ export default function EventDetailScreen() {
       setLoading(true);
       const eventData = await fetchEventDetails(id as string);
       setEvent(eventData);
+
+      // Check if user already has a booking for this event
+      if (profile?.id) {
+        const existingBooking = await checkExistingBooking(
+          eventData.id,
+          profile.id
+        );
+        setHasExistingBooking(!!existingBooking);
+      }
     } catch (error) {
       console.error("Load event details error:", error);
       Alert.alert("Error", "Failed to load event details");
@@ -59,16 +73,25 @@ export default function EventDetailScreen() {
       return;
     }
 
-    if (seatsRequested > event.spots_remaining) {
-      Alert.alert("Error", `Only ${event.spots_remaining} seats available`);
+    if (hasExistingBooking) {
+      Alert.alert(
+        "Already Booked",
+        "You have already booked this event. Check your bookings for details."
+      );
+      return;
+    }
+
+    if (event.spots_remaining === 0) {
+      Alert.alert(
+        "Event Full",
+        "This event is fully booked. You can try again later in case of cancellations."
+      );
       return;
     }
 
     Alert.alert(
       "Confirm Booking",
-      `Book ${seatsRequested} seat${seatsRequested > 1 ? "s" : ""} for ${(
-        event.budget_per_person * seatsRequested
-      ).toFixed(2)}?`,
+      `Book 1 seat for $${event.budget_per_person.toFixed(2)}?`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -79,13 +102,31 @@ export default function EventDetailScreen() {
               await createBooking({
                 event_id: event.id,
                 traveler_id: profile.id,
-                seats_requested: seatsRequested,
+                seats_requested: 1, // Always book 1 seat
               });
+
+              // Update local event state to reflect the booking
+              setEvent((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      spots_remaining: prev.spots_remaining - 1,
+                    }
+                  : null
+              );
+
+              setHasExistingBooking(true);
+
+             
 
               Alert.alert("Success", "Your booking has been confirmed!", [
                 {
-                  text: "OK",
+                  text: "View Bookings",
                   onPress: () => router.push("/(app)/traveler/bookings"),
+                },
+                {
+                  text: "Stay Here",
+                  style: "cancel",
                 },
               ]);
             } catch (error) {
@@ -230,6 +271,11 @@ export default function EventDetailScreen() {
         {/* Image Gallery */}
         {renderImageGallery()}
 
+        {/* Visual separator with info indicator */}
+        <View style={styles.separator}>
+          <View style={styles.separatorIndicator} />
+        </View>
+
         {/* Event Details */}
         <View style={styles.content}>
           {/* Title and Category */}
@@ -360,68 +406,31 @@ export default function EventDetailScreen() {
       <View style={styles.bookingSection}>
         <View style={styles.bookingInfo}>
           <Text style={styles.totalPrice}>
-            ${(event.budget_per_person * seatsRequested).toFixed(2)}
+            ${event.budget_per_person.toFixed(2)}
           </Text>
-          <Text style={styles.priceSubtext}>
-            {seatsRequested} seat{seatsRequested > 1 ? "s" : ""}
-          </Text>
-        </View>
-
-        <View style={styles.seatSelector}>
-          <TouchableOpacity
-            onPress={() => setSeatsRequested(Math.max(1, seatsRequested - 1))}
-            style={[
-              styles.seatButton,
-              seatsRequested <= 1 && styles.seatButtonDisabled,
-            ]}
-            disabled={seatsRequested <= 1}
-          >
-            <Ionicons
-              name="remove"
-              size={20}
-              color={seatsRequested <= 1 ? "#ccc" : "#007AFF"}
-            />
-          </TouchableOpacity>
-
-          <Text style={styles.seatCount}>{seatsRequested}</Text>
-
-          <TouchableOpacity
-            onPress={() =>
-              setSeatsRequested(
-                Math.min(event.spots_remaining, seatsRequested + 1)
-              )
-            }
-            style={[
-              styles.seatButton,
-              seatsRequested >= event.spots_remaining &&
-                styles.seatButtonDisabled,
-            ]}
-            disabled={seatsRequested >= event.spots_remaining}
-          >
-            <Ionicons
-              name="add"
-              size={20}
-              color={
-                seatsRequested >= event.spots_remaining ? "#ccc" : "#007AFF"
-              }
-            />
-          </TouchableOpacity>
+          <Text style={styles.priceSubtext}>1 seat</Text>
         </View>
 
         <TouchableOpacity
           style={[
             styles.bookButton,
-            (booking || event.spots_remaining === 0) &&
+            (booking || event.spots_remaining === 0 || hasExistingBooking) &&
               styles.bookButtonDisabled,
           ]}
           onPress={handleBooking}
-          disabled={booking || event.spots_remaining === 0}
+          disabled={
+            booking || event.spots_remaining === 0 || hasExistingBooking
+          }
         >
           {booking ? (
             <ActivityIndicator size="small" color="white" />
           ) : (
             <Text style={styles.bookButtonText}>
-              {event.spots_remaining === 0 ? "Sold Out" : "Book Now"}
+              {hasExistingBooking
+                ? "Already Booked"
+                : event.spots_remaining === 0
+                ? "Sold Out"
+                : "Book Now"}
             </Text>
           )}
         </TouchableOpacity>
@@ -437,12 +446,13 @@ const styles = StyleSheet.create({
   },
   header: {
     position: "absolute",
-    top: 50,
+    top: 0,
     left: 0,
     right: 0,
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: 16,
+    paddingTop: 50,
     zIndex: 10,
   },
   backBtn: {
@@ -496,9 +506,13 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    marginTop: -20,
     paddingTop: 24,
     paddingHorizontal: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 3,
   },
   titleSection: {
     marginBottom: 20,
@@ -672,7 +686,7 @@ const styles = StyleSheet.create({
     borderTopColor: "#f0f0f0",
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 16,
   },
   bookingInfo: {
     flex: 1,
@@ -712,10 +726,10 @@ const styles = StyleSheet.create({
   },
   bookButton: {
     backgroundColor: "#007AFF",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingHorizontal: 32,
+    paddingVertical: 14,
     borderRadius: 12,
-    minWidth: 100,
+    flex: 1,
     alignItems: "center",
   },
   bookButtonDisabled: {
@@ -760,5 +774,19 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "600",
+  },
+  separator: {
+    height: 24,
+    backgroundColor: "#f8f9fa",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eaeaea",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  separatorIndicator: {
+    width: 40,
+    height: 4,
+    backgroundColor: "#d0d0d0",
+    borderRadius: 2,
   },
 });

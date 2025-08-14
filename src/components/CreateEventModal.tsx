@@ -106,6 +106,15 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
       return;
     }
 
+    // Validate end time is after start time
+    const startDate = new Date(formData.start_time);
+    const endDate = new Date(formData.end_time);
+
+    if (endDate <= startDate) {
+      Alert.alert("Error", "End time must be after start time");
+      return;
+    }
+
     const eventDataWithImages: CreateEventData = {
       ...formData,
       images: selectedImages,
@@ -198,7 +207,20 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
             <DateTimePickerComponent
               label="End Time"
               value={formData.end_time}
-              onChange={(date) => setFormData({ ...formData, end_time: date })}
+              onChange={(date) => {
+                const startDate = new Date(formData.start_time);
+                const selectedDate = new Date(date);
+
+                if (selectedDate <= startDate) {
+                  Alert.alert(
+                    "Invalid Date",
+                    "End time must be after start time. Please select a later time."
+                  );
+                  return;
+                }
+
+                setFormData({ ...formData, end_time: date });
+              }}
               showPicker={showEndPicker}
               onShowPicker={() => setShowEndPicker(true)}
               onHidePicker={() => setShowEndPicker(false)}

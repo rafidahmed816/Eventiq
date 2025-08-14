@@ -8,13 +8,13 @@ import {
   FlatList,
   Platform,
   RefreshControl,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { BookingCard } from "../../../components/BookingCard";
 import { useAuth } from "../../../context/AuthContext";
 import {
@@ -240,11 +240,7 @@ export default function BookingsScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
-        <StatusBar
-          barStyle="dark-content"
-          backgroundColor="transparent"
-          translucent
-        />
+        <StatusBar barStyle="dark-content" backgroundColor="transparent" />
         <ActivityIndicator size="large" color="#007AFF" />
         <Text style={styles.loadingText}>Loading your bookings...</Text>
       </SafeAreaView>
@@ -253,11 +249,7 @@ export default function BookingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar
-        barStyle="dark-content"
-        backgroundColor="transparent"
-        translucent
-      />
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" />
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Bookings</Text>
@@ -311,7 +303,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8f9fa",
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   filterWrapper: {
     backgroundColor: "white",
@@ -380,7 +371,7 @@ const styles = StyleSheet.create({
     color: "#007AFF",
   },
   listContainer: {
-    paddingTop: 16,
+    paddingTop: 8,
     paddingBottom: 20,
     flexGrow: 1,
   },
@@ -389,7 +380,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#f8f9fa",
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   loadingText: {
     fontSize: 16,

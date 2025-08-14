@@ -40,7 +40,7 @@ export default function TravelerLayout() {
       <Tabs.Screen
         name="events"
         options={{
-          // title: "Events",
+          title: "Events",
           // tabBarLabel: "Events",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar" size={size} color={color} />
