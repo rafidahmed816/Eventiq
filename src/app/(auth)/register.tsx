@@ -1,52 +1,137 @@
-// app/(auth)/register.tsx
-import React, { useState } from 'react';
+import { Feather } from "@expo/vector-icons";
+import { Picker } from "@react-native-picker/picker";
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
+import { isValidPhoneNumber } from "libphonenumber-js";
+import React, { useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Dimensions,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  Alert,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-} from 'react-native';
-import { Link, router } from 'expo-router';
-import { Feather } from '@expo/vector-icons'; // Import the icon set
-import { authService } from '../../lib/auth';
+  View,
+} from "react-native";
+import { authService } from "../../lib/auth";
+import { registerStyles as styles } from "./styles/register"; // Correct import path for styles
+
+const { width } = Dimensions.get("window");
 
 export default function RegisterScreen() {
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    fullName: '',
-    phone: '',
-    role: 'traveler' as 'organizer' | 'traveler',
+    email: "",
+    password: "",
+    confirmPassword: "",
+    fullName: "",
+    phone: "",
+    role: "traveler" as "organizer" | "traveler",
+    countryCode: "BD", // Changed default to BD for Bangladesh
   });
+
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // State for password visibility
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // State for confirm password visibility
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [animation] = useState(new Animated.Value(0));
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(50));
+  const [errors, setErrors] = useState({
+    email: "",
+    password: "",
+    phone: "",
+  });
+
+  const [passwordFocused, setPasswordFocused] = useState(false);
+
+  React.useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  // Fixed back button handler
+  const handleBack = () => {
+    router.replace("/(auth)/login"); // Use replace instead of back() and specify exact path
+  };
+
+  // Fixed login navigation handler
+  const handleNavigateToLogin = () => {
+    router.replace("/(auth)/login"); // Use replace for consistent navigation
+  };
 
   const handleRegister = async () => {
+    setErrors({
+      email: "",
+      password: "",
+      phone: "",
+    });
+
     if (!formData.email || !formData.password || !formData.fullName) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      Alert.alert("Error", "Please fill in all required fields");
+      return;
+    }
+
+    if (!emailRegex.test(formData.email)) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        email: "Please enter a valid email address",
+      }));
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        password: "Passwords do not match",
+      }));
       return;
     }
 
-    if (formData.password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+    const passwordRegex = /^(?=.*[a-zA-Z]).{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        password:
+          "Password must be at least 8 characters long and include at least one letter",
+      }));
+      return;
+    }
+
+    if (
+      formData.phone &&
+      !isValidPhoneNumber(formData.phone, formData.countryCode)
+    ) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        phone: "Invalid phone number",
+      }));
       return;
     }
 
     setLoading(true);
+    Animated.timing(animation, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+
     try {
       await authService.signUp({
         email: formData.email,
@@ -57,324 +142,425 @@ export default function RegisterScreen() {
       });
 
       Alert.alert(
-        'Success',
-        'Account created successfully! Please check your email to verify your account.',
-        [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }]
+        "Success",
+        "Account created successfully! Please check your email to verify your account.",
+        [{ text: "OK", onPress: () => router.replace("/(auth)/login") }]
       );
     } catch (error: any) {
-      Alert.alert('Registration Failed', error.message || 'Something went wrong');
+      Alert.alert(
+        "Registration Failed",
+        error.message || "Something went wrong"
+      );
     } finally {
+      Animated.timing(animation, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
       setLoading(false);
+    }
+  };
+
+  const handlePasswordFocus = () => {
+    if (!passwordFocused) {
+      Alert.alert(
+        "Password Requirement",
+        "Password must be at least 8 characters long and include at least one letter."
+      );
+      setPasswordFocused(true);
+    }
+  };
+
+  const getCountryFlag = (countryCode: string) => {
+    switch (countryCode) {
+      case "US":
+        return "🇺🇸";
+      case "IN":
+        return "🇮🇳";
+      case "BD":
+        return "🇧🇩";
+      case "SA":
+        return "🇸🇦";
+      default:
+        return "🇧🇩";
+    }
+  };
+
+  const getCountryDialCode = (countryCode: string) => {
+    switch (countryCode) {
+      case "US":
+        return "+1";
+      case "IN":
+        return "+91";
+      case "BD":
+        return "+880";
+      case "SA":
+        return "+966";
+      default:
+        return "+880";
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
+      <LinearGradient
+        colors={["#32DC96", "#20B576"]}
+        style={styles.backgroundGradient}
+      />
+
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
       >
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <View style={styles.content}>
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 20 }} // Added padding for footer
+        >
+          <Animated.View
+            style={[
+              styles.content,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
+            {/* Back Button - Fixed with proper handler */}
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={handleBack}
+              activeOpacity={0.7} // Added for better touch feedback
+            >
+              <Feather name="arrow-left" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+
+            {/* Header with Logo */}
             <View style={styles.header}>
+              <View style={styles.logoContainer}>
+                <View style={styles.logoGradient}>
+                  <Image
+                    source={require("../../assets/images/eventiq-logo.png")}
+                    style={styles.logo}
+                    resizeMode="contain"
+                  />
+                </View>
+              </View>
               <Text style={styles.title}>Create Account</Text>
-              <Text style={styles.subtitle}>Join our community today</Text>
+              <Text style={styles.subtitle}>
+                Join our community and start your journey
+              </Text>
             </View>
 
-            <View style={styles.form}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Full Name *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.fullName}
-                  onChangeText={(text) => setFormData({ ...formData, fullName: text })}
-                  placeholder="Enter your full name"
-                  autoCapitalize="words"
-                  autoComplete="name" // Autocomplete for full name
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.email}
-                  onChangeText={(text) => setFormData({ ...formData, email: text })}
-                  placeholder="Enter your email"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoComplete="email" // Autocomplete for email
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Phone</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.phone}
-                  onChangeText={(text) => setFormData({ ...formData, phone: text })}
-                  placeholder="Enter your phone number"
-                  keyboardType="phone-pad"
-                  autoComplete="tel" // Autocomplete for phone number
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>I am a:</Text>
-                <View style={styles.roleButtons}>
-                  <TouchableOpacity
-                    style={[
-                      styles.roleButton,
-                      formData.role === 'traveler' && styles.roleButtonActive,
-                    ]}
-                    onPress={() => setFormData({ ...formData, role: 'traveler' })}
-                  >
-                    <Text
-                      style={[
-                        styles.roleButtonText,
-                        formData.role === 'traveler' && styles.roleButtonTextActive,
-                      ]}
-                    >
-                      Traveler
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.roleButton,
-                      formData.role === 'organizer' && styles.roleButtonActive,
-                    ]}
-                    onPress={() => setFormData({ ...formData, role: 'organizer' })}
-                  >
-                    <Text
-                      style={[
-                        styles.roleButtonText,
-                        formData.role === 'organizer' && styles.roleButtonTextActive,
-                      ]}
-                    >
-                      Organizer
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Password *</Text>
-                <View style={styles.passwordContainer}>
-                  <TextInput
-                    style={styles.passwordInput}
-                    value={formData.password}
-                    onChangeText={(text) => setFormData({ ...formData, password: text })}
-                    placeholder="Create a password"
-                    secureTextEntry={!showPassword} // Toggle password visibility
-                    autoCapitalize="none"
-                    autoComplete="new-password" // Autocomplete for new password
-                  />
-                  <TouchableOpacity
-                    style={styles.passwordToggle}
-                    onPress={() => setShowPassword(!showPassword)}
-                  >
-                    <Feather
-                      name={showPassword ? "eye" : "eye-off"}
-                      size={24}
-                      color="#666"
+            {/* Form Card */}
+            <View style={styles.formCard}>
+              <View style={styles.form}>
+                {/* Full Name Input */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>
+                    <Feather name="user" size={16} color="#32DC96" /> Full Name
+                    *
+                  </Text>
+                  <View style={styles.inputContainer}>
+                    <TextInput
+                      style={styles.input}
+                      value={formData.fullName}
+                      onChangeText={(text) =>
+                        setFormData({ ...formData, fullName: text })
+                      }
+                      placeholder="Enter your full name"
+                      autoCapitalize="words"
+                      placeholderTextColor="#A0A0A0"
                     />
-                  </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Confirm Password *</Text>
-                <View style={styles.passwordContainer}>
-                  <TextInput
-                    style={styles.passwordInput}
-                    value={formData.confirmPassword}
-                    onChangeText={(text) => setFormData({ ...formData, confirmPassword: text })}
-                    placeholder="Confirm your password"
-                    secureTextEntry={!showConfirmPassword} // Toggle confirm password visibility
-                    autoCapitalize="none"
-                    autoComplete="new-password" // Autocomplete for new password
-                  />
-                  <TouchableOpacity
-                    style={styles.passwordToggle}
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    <Feather
-                      name={showConfirmPassword ? "eye" : "eye-off"}
-                      size={24}
-                      color="#666"
+                {/* Email Input */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>
+                    <Feather name="mail" size={16} color="#32DC96" /> Email *
+                  </Text>
+                  <View style={styles.inputContainer}>
+                    <TextInput
+                      style={[
+                        styles.input,
+                        errors.email ? styles.inputError : {},
+                      ]}
+                      value={formData.email}
+                      onChangeText={(text) =>
+                        setFormData({ ...formData, email: text })
+                      }
+                      placeholder="Enter your email"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      placeholderTextColor="#A0A0A0"
                     />
-                  </TouchableOpacity>
+                  </View>
+                  {errors.email && (
+                    <Text style={styles.errorText}>{errors.email}</Text>
+                  )}
                 </View>
-              </View>
 
-              <TouchableOpacity
-                style={[styles.loginButton, loading && styles.disabledButton]}
-                onPress={handleRegister}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.loginButtonText}>Create Account</Text>
-                )}
-              </TouchableOpacity>
-            </View>
+                {/* Phone Input */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>
+                    <Feather name="phone" size={16} color="#32DC96" /> Phone
+                    (Optional)
+                  </Text>
+                  <View style={styles.phoneContainer}>
+                    <View style={styles.countrySelector}>
+                      <Text style={styles.countryFlag}>
+                        {getCountryFlag(formData.countryCode)}
+                      </Text>
+                      <Text style={styles.countryCode}>
+                        {getCountryDialCode(formData.countryCode)}
+                      </Text>
+                      <Feather name="chevron-down" size={16} color="#32DC96" />
+                      <Picker
+                        selectedValue={formData.countryCode}
+                        style={styles.hiddenPicker}
+                        onValueChange={(itemValue) =>
+                          setFormData({ ...formData, countryCode: itemValue })
+                        }
+                      >
+                        <Picker.Item label="🇧🇩 +880" value="BD" />
+                        <Picker.Item label="🇺🇸 +1" value="US" />
+                        <Picker.Item label="🇮🇳 +91" value="IN" />
+                        <Picker.Item label="🇸🇦 +966" value="SA" />
+                      </Picker>
+                    </View>
+                    <View style={styles.phoneInputContainer}>
+                      <TextInput
+                        style={[
+                          styles.phoneInput,
+                          errors.phone ? styles.inputError : {},
+                        ]}
+                        value={formData.phone}
+                        onChangeText={(text) =>
+                          setFormData({ ...formData, phone: text })
+                        }
+                        placeholder="Enter phone number"
+                        keyboardType="phone-pad"
+                        placeholderTextColor="#A0A0A0"
+                      />
+                    </View>
+                  </View>
+                  {errors.phone && (
+                    <Text style={styles.errorText}>{errors.phone}</Text>
+                  )}
+                </View>
 
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>Already have an account? </Text>
-              <Link href="/(auth)/login" asChild>
-                <TouchableOpacity>
-                  <Text style={styles.signupLink}>Sign In</Text>
+                {/* Role Selection (Traveler or Organizer) */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>
+                    <Feather name="briefcase" size={16} color="#32DC96" /> I am
+                    a:
+                  </Text>
+                  <View style={styles.roleButtons}>
+                    <TouchableOpacity
+                      style={[
+                        styles.roleButton,
+                        formData.role === "traveler" && styles.roleButtonActive,
+                      ]}
+                      onPress={() =>
+                        setFormData({ ...formData, role: "traveler" })
+                      }
+                    >
+                      <LinearGradient
+                        colors={
+                          formData.role === "traveler"
+                            ? ["#32DC96", "#20B576"]
+                            : ["#F7FAFC", "#F7FAFC"]
+                        }
+                        style={styles.roleButtonGradient}
+                      >
+                        <Feather
+                          name="map-pin"
+                          size={20}
+                          color={
+                            formData.role === "traveler" ? "#FFFFFF" : "#32DC96"
+                          }
+                        />
+                        <Text
+                          style={[
+                            styles.roleButtonText,
+                            formData.role === "traveler" &&
+                              styles.roleButtonTextActive,
+                          ]}
+                        >
+                          Traveler
+                        </Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.roleButton,
+                        formData.role === "organizer" &&
+                          styles.roleButtonActive,
+                      ]}
+                      onPress={() =>
+                        setFormData({ ...formData, role: "organizer" })
+                      }
+                    >
+                      <LinearGradient
+                        colors={
+                          formData.role === "organizer"
+                            ? ["#32DC96", "#20B576"]
+                            : ["#F7FAFC", "#F7FAFC"]
+                        }
+                        style={styles.roleButtonGradient}
+                      >
+                        <Feather
+                          name="users"
+                          size={20}
+                          color={
+                            formData.role === "organizer"
+                              ? "#FFFFFF"
+                              : "#32DC96"
+                          }
+                        />
+                        <Text
+                          style={[
+                            styles.roleButtonText,
+                            formData.role === "organizer" &&
+                              styles.roleButtonTextActive,
+                          ]}
+                        >
+                          Organizer
+                        </Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Password Input */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>
+                    <Feather name="lock" size={16} color="#32DC96" /> Password *
+                  </Text>
+                  <View style={styles.passwordContainer}>
+                    <TextInput
+                      style={[
+                        styles.passwordInput,
+                        errors.password ? styles.inputError : {},
+                      ]}
+                      value={formData.password}
+                      onChangeText={(text) =>
+                        setFormData({ ...formData, password: text })
+                      }
+                      onFocus={handlePasswordFocus}
+                      placeholder="Create a password"
+                      secureTextEntry={!showPassword}
+                      autoCapitalize="none"
+                      placeholderTextColor="#A0A0A0"
+                    />
+                    <TouchableOpacity
+                      style={styles.passwordToggle}
+                      onPress={() => setShowPassword(!showPassword)}
+                    >
+                      <Feather
+                        name={showPassword ? "eye" : "eye-off"}
+                        size={20}
+                        color="#32DC96"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  {errors.password && (
+                    <Text style={styles.errorText}>{errors.password}</Text>
+                  )}
+                </View>
+
+                {/* Confirm Password Input */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>
+                    <Feather name="lock" size={16} color="#32DC96" /> Confirm
+                    Password *
+                  </Text>
+                  <View style={styles.passwordContainer}>
+                    <TextInput
+                      style={styles.passwordInput}
+                      value={formData.confirmPassword}
+                      onChangeText={(text) =>
+                        setFormData({ ...formData, confirmPassword: text })
+                      }
+                      placeholder="Confirm your password"
+                      secureTextEntry={!showConfirmPassword}
+                      autoCapitalize="none"
+                      placeholderTextColor="#A0A0A0"
+                    />
+                    <TouchableOpacity
+                      style={styles.passwordToggle}
+                      onPress={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                    >
+                      <Feather
+                        name={showConfirmPassword ? "eye" : "eye-off"}
+                        size={20}
+                        color="#32DC96"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Submit Button */}
+                <TouchableOpacity
+                  style={[styles.loginButton, loading && styles.disabledButton]}
+                  onPress={handleRegister}
+                  disabled={loading}
+                >
+                  <LinearGradient
+                    colors={["#32DC96", "#20B576"]}
+                    style={styles.buttonGradient}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <>
+                        <Feather name="user-plus" size={20} color="#FFFFFF" />
+                        <Text style={styles.loginButtonText}>
+                          Create Account
+                        </Text>
+                      </>
+                    )}
+                  </LinearGradient>
                 </TouchableOpacity>
-              </Link>
+              </View>
             </View>
-          </View>
+
+            {/* Footer with Login Navigation */}
+            <View style={styles.footer}>
+              <View style={styles.loginNavContainer}>
+                <Text style={styles.footerText}>
+                  Already have an account?
+                </Text>
+                <TouchableOpacity
+                  onPress={handleNavigateToLogin}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.signupLink}> Sign In</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Enhanced Loading Screen */}
+      {loading && (
+        <Animated.View style={[styles.splashScreen, { opacity: animation }]}>
+          <LinearGradient
+            colors={["rgba(50, 220, 150, 0.9)", "rgba(32, 181, 118, 0.9)"]}
+            style={styles.splashGradient}
+          >
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#FFFFFF" />
+              <Text style={styles.loadingText}>Creating your account...</Text>
+            </View>
+          </LinearGradient>
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
-    minHeight: '100%',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666666',
-    textAlign: 'center',
-  },
-  form: {
-    marginBottom: 40,
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1A1A1A',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    backgroundColor: '#FAFAFA',
-  },
-  passwordContainer: { // New style for password input with toggle icon
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    backgroundColor: '#FAFAFA',
-  },
-  passwordInput: { // New style for password TextInput to allow space for icon
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
-  passwordToggle: { // New style for the eye icon touchable area
-    padding: 12,
-  },
-  roleButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  roleButton: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    backgroundColor: '#FAFAFA',
-  },
-  roleButtonActive: {
-    borderColor: '#007AFF',
-    backgroundColor: '#007AFF',
-  },
-  roleButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#666666',
-  },
-  roleButtonTextActive: {
-    color: '#FFFFFF',
-  },
-  loginButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  disabledButton: {
-    opacity: 0.6,
-  },
-  loginButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  forgotButton: {
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  forgotButtonText: {
-    color: '#007AFF',
-    fontSize: 16,
-  },
-  backButton: {
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  backButtonText: {
-    color: '#007AFF',
-    fontSize: 16,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20, // Add some margin top to separate from the button
-  },
-  footerText: {
-    fontSize: 16,
-    color: '#666666',
-  },
-  signupLink: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-});
