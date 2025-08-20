@@ -13,6 +13,21 @@ export default function TravelerLayout() {
         tabBarStyle: {
           paddingBottom: insets.bottom + 10,
           height: 60 + insets.bottom,
+          backgroundColor: "#FFFFFF",
+          borderTopWidth: 1,
+          borderTopColor: "#E5E7EB",
+          elevation: 8,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+        },
+        tabBarActiveTintColor: "#32DC96",
+        tabBarInactiveTintColor: "#6B7280",
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: "600",
+          marginTop: 4,
         },
         // headerStyle: { backgroundColor: "#007AFF" },
         // headerTintColor: "#FFFFFF",
@@ -40,14 +55,13 @@ export default function TravelerLayout() {
       <Tabs.Screen
         name="events"
         options={{
-          // title: "Events",
-          // tabBarLabel: "Events",
+          title: "Events",
+          tabBarLabel: "Events",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar" size={size} color={color} />
           ),
         }}
       />
-      
       <Tabs.Screen
         name="bookings"
         options={{

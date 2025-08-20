@@ -145,8 +145,14 @@ export default function TravelerEventsScreen() {
   };
 
   const renderEventCard = ({ item }: { item: TravelerEvent }) => (
-    <EventFeedCard event={item} onPress={() => handleEventPress(item)} />
+    <EventFeedCard
+      key={`event-${item.id}`}
+      event={item}
+      onPress={() => handleEventPress(item)}
+    />
   );
+
+  const keyExtractor = (item: TravelerEvent) => `event-${item.id}`;
 
   const renderFooter = () => {
     if (!loadingMore) return null;
@@ -203,7 +209,7 @@ export default function TravelerEventsScreen() {
       <FlatList
         data={events}
         renderItem={renderEventCard}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
         contentContainerStyle={styles.listContainer}
         refreshControl={
           <RefreshControl

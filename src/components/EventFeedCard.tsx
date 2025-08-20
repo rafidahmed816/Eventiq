@@ -91,7 +91,7 @@ export const EventFeedCard: React.FC<EventFeedCardProps> = ({
         >
           {event.images.map((image, index) => (
             <Image
-              key={image.id}
+              key={`${event.id}-${image.id}`}
               source={{ uri: image.image_url }}
               style={[styles.carouselImage, { width: CARD_WIDTH }]}
               resizeMode="cover"

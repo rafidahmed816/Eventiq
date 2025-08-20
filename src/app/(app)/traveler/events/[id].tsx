@@ -14,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import MessageButton from "../../../../components/MessageButton";
 import { useAuth } from "../../../../context/AuthContext";
 import { createBooking } from "../../../../lib/traveler/bookings";
 import {
@@ -356,15 +357,22 @@ export default function EventDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* Booking Section */}
+      {/* Booking and Message Section */}
       <View style={styles.bookingSection}>
-        <View style={styles.bookingInfo}>
-          <Text style={styles.totalPrice}>
-            ${(event.budget_per_person * seatsRequested).toFixed(2)}
-          </Text>
-          <Text style={styles.priceSubtext}>
-            {seatsRequested} seat{seatsRequested > 1 ? "s" : ""}
-          </Text>
+        <View style={styles.actionButtons}>
+          <MessageButton
+            eventId={event.id}
+            organizerId={event.organizer_id}
+            currentUser={profile!}
+          />
+          <View style={styles.bookingInfo}>
+            <Text style={styles.totalPrice}>
+              ${(event.budget_per_person * seatsRequested).toFixed(2)}
+            </Text>
+            <Text style={styles.priceSubtext}>
+              {seatsRequested} seat{seatsRequested > 1 ? "s" : ""}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.seatSelector}>
@@ -431,6 +439,15 @@ export default function EventDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  actionButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+  },
   container: {
     flex: 1,
     backgroundColor: "#f8f9fa",
