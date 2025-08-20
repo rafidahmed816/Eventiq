@@ -2,7 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { isValidPhoneNumber } from "libphonenumber-js";
+import { CountryCode, isValidPhoneNumber } from "libphonenumber-js";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -32,7 +32,7 @@ export default function RegisterScreen() {
     fullName: "",
     phone: "",
     role: "traveler" as "organizer" | "traveler",
-    countryCode: "BD", // Changed default to BD for Bangladesh
+    countryCode: "BD" as CountryCode, // Cast BD as CountryCode
   });
 
   const [loading, setLoading] = useState(false);
@@ -116,7 +116,7 @@ export default function RegisterScreen() {
 
     if (
       formData.phone &&
-      !isValidPhoneNumber(formData.phone, formData.countryCode)
+      !isValidPhoneNumber(formData.phone, formData.countryCode as CountryCode)
     ) {
       setErrors((prevErrors) => ({
         ...prevErrors,
@@ -320,7 +320,10 @@ export default function RegisterScreen() {
                         selectedValue={formData.countryCode}
                         style={styles.hiddenPicker}
                         onValueChange={(itemValue) =>
-                          setFormData({ ...formData, countryCode: itemValue })
+                          setFormData({
+                            ...formData,
+                            countryCode: itemValue as CountryCode,
+                          })
                         }
                       >
                         <Picker.Item label="🇧🇩 +880" value="BD" />
@@ -532,9 +535,7 @@ export default function RegisterScreen() {
             {/* Footer with Login Navigation */}
             <View style={styles.footer}>
               <View style={styles.loginNavContainer}>
-                <Text style={styles.footerText}>
-                  Already have an account?
-                </Text>
+                <Text style={styles.footerText}>Already have an account?</Text>
                 <TouchableOpacity
                   onPress={handleNavigateToLogin}
                   activeOpacity={0.7}
