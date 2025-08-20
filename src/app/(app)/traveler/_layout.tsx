@@ -56,13 +56,12 @@ export default function TravelerLayout() {
         name="events"
         options={{
           title: "Events",
-          tabBarLabel: "Events", // Keep this if you want the label to appear
+          tabBarLabel: "Events",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar" size={size} color={color} />
           ),
         }}
       />
-
       <Tabs.Screen
         name="bookings"
         options={{
