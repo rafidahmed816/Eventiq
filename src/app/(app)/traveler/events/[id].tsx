@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CancelBookingButton } from "../../../../components/CancelBookingButton";
+import MessageButton from "../../../../components/MessageButton";
 import { useAuth } from "../../../../context/AuthContext";
 import {
   BookingWithEvent,
@@ -54,6 +55,18 @@ export default function EventDetailScreen() {
     try {
       setLoading(true);
       const eventData = await fetchEventDetails(id as string);
+
+      // Debug: Check for duplicate image IDs
+      if (eventData.images) {
+        const imageIds = eventData.images.map((img) => img.id);
+        const duplicates = imageIds.filter(
+          (id, index) => imageIds.indexOf(id) !== index
+        );
+        if (duplicates.length > 0) {
+          console.warn("Duplicate image IDs found:", duplicates);
+        }
+      }
+
       setEvent(eventData);
 
       // Check if user already has a booking for this event
@@ -62,8 +75,23 @@ export default function EventDetailScreen() {
           eventData.id,
           profile.id
         );
-        setExistingBooking(bookingData);
-        setHasExistingBooking(!!bookingData);
+
+        if (bookingData) {
+          // Convert Booking to BookingWithEvent
+          const bookingWithEvent: BookingWithEvent = {
+            ...bookingData,
+            events: {
+              ...eventData,
+              event_images: eventData.images || [],
+              profiles: eventData.organizer,
+            },
+          };
+          setExistingBooking(bookingWithEvent);
+          setHasExistingBooking(true);
+        } else {
+          setExistingBooking(null);
+          setHasExistingBooking(false);
+        }
 
         // Reset seat selector to 1 when loading event details
         setSeatsRequested(1);
@@ -268,9 +296,9 @@ export default function EventDetailScreen() {
           onScroll={handleScroll}
           scrollEventThrottle={16}
         >
-          {event.images.map((image) => (
+          {event.images.map((image, index) => (
             <Image
-              key={image.id}
+              key={`${event.id}-image-${image.id}-${index}`}
               source={{ uri: image.image_url }}
               style={[styles.image, { width }]}
               resizeMode="cover"
@@ -282,7 +310,7 @@ export default function EventDetailScreen() {
           <View style={styles.imageIndicators}>
             {event.images.map((_, index) => (
               <View
-                key={index}
+                key={`${event.id}-indicator-${index}`}
                 style={[
                   styles.indicator,
                   index === currentImageIndex && styles.activeIndicator,
@@ -427,7 +455,10 @@ export default function EventDetailScreen() {
             <View style={styles.spotsSection}>
               <Text style={styles.sectionTitle}>Places We'll Visit</Text>
               {event.spots.map((spot: any, index: number) => (
-                <View key={spot.id} style={styles.spotItem}>
+                <View
+                  key={`${event.id}-spot-${spot.id}-${index}`}
+                  style={styles.spotItem}
+                >
                   <View style={styles.spotNumber}>
                     <Text style={styles.spotNumberText}>{index + 1}</Text>
                   </View>
@@ -471,6 +502,15 @@ export default function EventDetailScreen() {
 
       {/* Booking Section */}
       <View style={styles.bookingSection}>
+        {/* Message Button - Always Available */}
+        <View style={styles.messageRow}>
+          <MessageButton
+            eventId={event.id}
+            organizerId={event.organizer_id}
+            currentUser={profile!}
+          />
+        </View>
+
         {hasExistingBooking && existingBooking ? (
           // Show booking status and cancel button if user has a booking
           <View style={styles.bookedContainer}>
@@ -489,69 +529,86 @@ export default function EventDetailScreen() {
             />
           </View>
         ) : (
-          // Show booking button if no booking exists
-          <View style={styles.bookingRow}>
-            <View style={styles.bookingInfo}>
-              <Text style={styles.totalPrice}>
-                ${(event.budget_per_person * seatsRequested).toFixed(2)}
-              </Text>
-              <Text style={styles.priceSubtext}>
-                {seatsRequested} seat{seatsRequested > 1 ? "s" : ""}
-              </Text>
-            </View>
-
-            {/* Seat Selector */}
-            <View style={styles.seatSelector}>
-              <TouchableOpacity
-                style={[
-                  styles.seatButton,
-                  seatsRequested <= 1 && styles.seatButtonDisabled,
-                ]}
-                onPress={() =>
-                  setSeatsRequested(Math.max(1, seatsRequested - 1))
-                }
-                disabled={seatsRequested <= 1}
-              >
-                <Text style={styles.seatButtonText}>-</Text>
-              </TouchableOpacity>
-
-              <Text style={styles.seatCount}>{seatsRequested}</Text>
-
-              <TouchableOpacity
-                style={[
-                  styles.seatButton,
-                  seatsRequested >= event.spots_remaining &&
-                    styles.seatButtonDisabled,
-                ]}
-                onPress={() =>
-                  setSeatsRequested(
-                    Math.min(event.spots_remaining, seatsRequested + 1)
-                  )
-                }
-                disabled={seatsRequested >= event.spots_remaining}
-              >
-                <Text style={styles.seatButtonText}>+</Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={[
-                styles.bookButton,
-                (booking || event.spots_remaining === 0) &&
-                  styles.bookButtonDisabled,
-              ]}
-              onPress={handleBooking}
-              disabled={booking || event.spots_remaining === 0}
-            >
-              {booking ? (
-                <ActivityIndicator size="small" color="white" />
-              ) : (
-                <Text style={styles.bookButtonText}>
-                  {event.spots_remaining === 0 ? "Sold Out" : "Book Now"}
+          // Show booking controls if no booking exists
+          <>
+            {/* Price Display Row */}
+            <View style={styles.priceRow}>
+              <View style={styles.bookingInfo}>
+                <Text style={styles.totalPrice}>
+                  ${(event.budget_per_person * seatsRequested).toFixed(2)}
                 </Text>
-              )}
-            </TouchableOpacity>
-          </View>
+                <Text style={styles.priceSubtext}>
+                  {seatsRequested} seat{seatsRequested > 1 ? "s" : ""}
+                </Text>
+              </View>
+            </View>
+
+            {/* Seat Selector and Book Button Row */}
+            <View style={styles.bookingRow}>
+              <View style={styles.seatSelector}>
+                <TouchableOpacity
+                  style={[
+                    styles.seatButton,
+                    seatsRequested <= 1 && styles.seatButtonDisabled,
+                  ]}
+                  onPress={() =>
+                    setSeatsRequested(Math.max(1, seatsRequested - 1))
+                  }
+                  disabled={seatsRequested <= 1}
+                >
+                  <Ionicons
+                    name="remove"
+                    size={20}
+                    color={seatsRequested <= 1 ? "#ccc" : "#007AFF"}
+                  />
+                </TouchableOpacity>
+
+                <Text style={styles.seatCount}>{seatsRequested}</Text>
+
+                <TouchableOpacity
+                  style={[
+                    styles.seatButton,
+                    seatsRequested >= event.spots_remaining &&
+                      styles.seatButtonDisabled,
+                  ]}
+                  onPress={() =>
+                    setSeatsRequested(
+                      Math.min(event.spots_remaining, seatsRequested + 1)
+                    )
+                  }
+                  disabled={seatsRequested >= event.spots_remaining}
+                >
+                  <Ionicons
+                    name="add"
+                    size={20}
+                    color={
+                      seatsRequested >= event.spots_remaining
+                        ? "#ccc"
+                        : "#007AFF"
+                    }
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={[
+                  styles.bookButton,
+                  (booking || event.spots_remaining === 0) &&
+                    styles.bookButtonDisabled,
+                ]}
+                onPress={handleBooking}
+                disabled={booking || event.spots_remaining === 0}
+              >
+                {booking ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Text style={styles.bookButtonText}>
+                    {event.spots_remaining === 0 ? "Sold Out" : "Book Now"}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </>
         )}
       </View>
     </SafeAreaView>
@@ -805,6 +862,16 @@ const styles = StyleSheet.create({
     borderTopColor: "#f0f0f0",
     minHeight: 90,
   },
+  messageRow: {
+    marginBottom: 12,
+  },
+
+  actionButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
   bookedContainer: {
     flex: 1,
     gap: 12,
@@ -848,11 +915,6 @@ const styles = StyleSheet.create({
   },
   seatButtonDisabled: {
     backgroundColor: "#f5f5f5",
-  },
-  seatButtonText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#007AFF",
   },
   seatCount: {
     fontSize: 16,
