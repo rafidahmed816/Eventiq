@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router/tabs";
 import React from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 // Traveler Bottom Tabs Layout
 export default function TravelerLayout() {
   const insets = useSafeAreaInsets();

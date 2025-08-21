@@ -80,9 +80,21 @@ export default function TravelerEventsScreen() {
       );
 
       if (reset) {
-        setEvents(response.events);
+        // Remove duplicates when resetting
+        const uniqueEvents = response.events.filter(
+          (event, index, self) =>
+            index === self.findIndex((e) => e.id === event.id)
+        );
+        setEvents(uniqueEvents);
       } else {
-        setEvents((prev) => [...prev, ...response.events]);
+        // Remove duplicates when adding more events
+        setEvents((prev) => {
+          const allEvents = [...prev, ...response.events];
+          return allEvents.filter(
+            (event, index, self) =>
+              index === self.findIndex((e) => e.id === event.id)
+          );
+        });
       }
 
       setHasMore(response.hasMore);
@@ -103,7 +115,14 @@ export default function TravelerEventsScreen() {
         searchQuery,
         selectedCategory === "All" ? undefined : selectedCategory
       );
-      setEvents(results);
+
+      // Remove duplicates from search results
+      const uniqueResults = results.filter(
+        (event, index, self) =>
+          index === self.findIndex((e) => e.id === event.id)
+      );
+
+      setEvents(uniqueResults);
       setHasMore(false); // Search results don't have pagination
       setCurrentPage(1);
     } catch (error) {
@@ -144,15 +163,17 @@ export default function TravelerEventsScreen() {
     setSearchQuery("");
   };
 
-  const renderEventCard = ({ item }: { item: TravelerEvent }) => (
-    <EventFeedCard
-      key={`event-${item.id}`}
-      event={item}
-      onPress={() => handleEventPress(item)}
-    />
-  );
+  const renderEventCard = ({
+    item,
+    index,
+  }: {
+    item: TravelerEvent;
+    index: number;
+  }) => <EventFeedCard event={item} onPress={() => handleEventPress(item)} />;
 
-  const keyExtractor = (item: TravelerEvent) => `event-${item.id}`;
+  // Use combination of ID and index for maximum uniqueness
+  const keyExtractor = (item: TravelerEvent, index: number) =>
+    `event-${item.id}-${index}`;
 
   const renderFooter = () => {
     if (!loadingMore) return null;
