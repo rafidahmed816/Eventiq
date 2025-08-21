@@ -90,9 +90,21 @@ export default function TravelerEventsScreen() {
       );
 
       if (reset) {
-        setEvents(response.events);
+        // Remove duplicates when resetting
+        const uniqueEvents = response.events.filter(
+          (event, index, self) =>
+            index === self.findIndex((e) => e.id === event.id)
+        );
+        setEvents(uniqueEvents);
       } else {
-        setEvents((prev) => [...prev, ...response.events]);
+        // Remove duplicates when adding more events
+        setEvents((prev) => {
+          const allEvents = [...prev, ...response.events];
+          return allEvents.filter(
+            (event, index, self) =>
+              index === self.findIndex((e) => e.id === event.id)
+          );
+        });
       }
 
       setHasMore(response.hasMore);
@@ -113,8 +125,15 @@ export default function TravelerEventsScreen() {
         searchQuery,
         selectedCategory === "All" ? undefined : selectedCategory
       );
-      setEvents(results);
-      setHasMore(false); 
+
+      // Remove duplicates from search results
+      const uniqueResults = results.filter(
+        (event, index, self) =>
+          index === self.findIndex((e) => e.id === event.id)
+      );
+
+      setEvents(uniqueResults);
+      setHasMore(false); // Search results don't have pagination
       setCurrentPage(1);
     } catch (error) {
       console.error("Search error:", error);
@@ -154,9 +173,17 @@ export default function TravelerEventsScreen() {
     setSearchQuery("");
   };
 
-  const renderEventCard = ({ item }: { item: TravelerEvent }) => (
-    <EventFeedCard event={item} onPress={() => handleEventPress(item)} />
-  );
+  const renderEventCard = ({
+    item,
+    index,
+  }: {
+    item: TravelerEvent;
+    index: number;
+  }) => <EventFeedCard event={item} onPress={() => handleEventPress(item)} />;
+
+  // Use combination of ID and index for maximum uniqueness
+  const keyExtractor = (item: TravelerEvent, index: number) =>
+    `event-${item.id}-${index}`;
 
   const renderFooter = () => {
     if (!loadingMore) return null;
@@ -213,7 +240,7 @@ export default function TravelerEventsScreen() {
       <FlatList
         data={events}
         renderItem={renderEventCard}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
         contentContainerStyle={styles.listContainer}
         refreshControl={
           <RefreshControl
