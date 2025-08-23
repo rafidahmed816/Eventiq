@@ -1,5 +1,6 @@
 // app/(app)/traveler/chat.tsx
 import { Ionicons } from "@expo/vector-icons";
+import * as Notifications from "expo-notifications";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -14,7 +15,13 @@ import {
 import { ChatScreen } from "../../../components/ChatScreen";
 import ConversationList from "../../../components/ConversationList";
 import { useAuth } from "../../../context/AuthContext";
+import { NotificationService } from "../../../lib/notifications";
 import type { ConversationWithDetails } from "../../../types/messaging";
+
+interface NotificationData {
+  conversationId: string;
+  userRole: "organizer" | "traveler";
+}
 
 const TravelerChatScreen: React.FC = () => {
   const router = useRouter();
@@ -25,10 +32,34 @@ const TravelerChatScreen: React.FC = () => {
   >((conversationId as string) || null);
 
   useEffect(() => {
-    if (conversationId && typeof conversationId === "string") {
-      setSelectedConversation(conversationId);
-    }
-  }, [conversationId]);
+    // Initialize notifications
+    NotificationService.initialize();
+
+    // Set up notification handler
+    const notificationListener =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        // First cast to unknown, then to our specific type
+        const notificationData = response.notification.request.content
+          .data as unknown;
+        const data = notificationData as NotificationData;
+
+        // Add null check and type validation
+        if (
+          data &&
+          typeof data.conversationId === "string" &&
+          data.userRole === "traveler"
+        ) {
+          setSelectedConversation(data.conversationId);
+          router.push(
+            `/(app)/traveler/chat?conversationId=${data.conversationId}`
+          );
+        }
+      });
+
+    return () => {
+      notificationListener.remove();
+    };
+  }, []);
 
   const handleConversationSelect = (conversation: ConversationWithDetails) => {
     setSelectedConversation(conversation.id);

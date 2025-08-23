@@ -1,5 +1,6 @@
 // components/ConversationList.tsx
 import { Ionicons } from "@expo/vector-icons";
+import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -13,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { MessagingService } from "../lib/messaging";
+import { NotificationService } from "../lib/notifications";
 import type { ConversationWithDetails, Profile } from "../types/messaging";
 
 interface ConversationListProps {
@@ -164,13 +166,48 @@ const ConversationList: React.FC<ConversationListProps> = ({
   };
 
   useEffect(() => {
+    // Initialize notifications
+    NotificationService.initialize();
+
+    // Listen for notification taps
+    const notificationListener =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        const conversationId =
+          response.notification.request.content.data?.conversationId;
+        if (conversationId && onConversationSelect) {
+          const conversation = conversations.find(
+            (c) => c.id === conversationId
+          );
+          if (conversation) {
+            onConversationSelect(conversation);
+          }
+        }
+      });
+
+    return () => {
+      notificationListener.remove();
+    };
+  }, [conversations, onConversationSelect]);
+
+  useEffect(() => {
     loadConversations();
 
-    // Subscribe to conversation updates
     const subscription = MessagingService.subscribeToConversations(
       currentUser.id,
-      () => {
-        loadConversations(); // Refresh conversations when there's an update
+      async (payload) => {
+        if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+          if (payload.new.sender_id !== currentUser.id) {
+            await NotificationService.scheduleMessageNotification({
+              sender: {
+                full_name: payload.new.sender?.full_name || "Unknown User",
+              },
+              content: payload.new.content,
+              conversation_id: payload.new.conversation_id,
+              userRole: currentUser.role as "organizer" | "traveler", // Add this
+            });
+          }
+          loadConversations();
+        }
       }
     );
 

@@ -14,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { MessagingService } from "../lib/messaging";
+import { NotificationService } from "../lib/notifications";
 import type {
   ConversationWithDetails,
   Message,
@@ -180,11 +181,27 @@ const ChatScreen: React.FC<ChatScreenProps> = ({
     // Subscribe to new messages
     const subscription = MessagingService.subscribeToMessages(
       conversationId,
-      (payload) => {
+      async (payload) => {
         if (payload.eventType === "INSERT") {
           const newMessage = payload.new as Message;
+
+          // Only show notification if the user is not the sender
+          if (
+            newMessage.sender_id !== currentUser.id &&
+            newMessage.sender?.full_name &&
+            newMessage.content
+          ) {
+            await NotificationService.scheduleMessageNotification({
+              sender: {
+                full_name: newMessage.sender.full_name,
+              },
+              content: newMessage.content,
+              conversation_id: conversationId,
+              userRole: currentUser.role as "organizer" | "traveler",
+            });
+          }
+
           setMessages((prev) => {
-            // Avoid duplicates
             if (prev.some((msg) => msg.id === newMessage.id)) {
               return prev;
             }

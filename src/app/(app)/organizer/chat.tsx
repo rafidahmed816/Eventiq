@@ -2,6 +2,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
+import * as Notifications from 'expo-notifications';
+import { NotificationService } from '../../../lib/notifications';
+
 import {
   ActivityIndicator,
   SafeAreaView,
@@ -15,6 +18,11 @@ import ConversationList from "../../../components/ConversationList";
 import { useAuth } from "../../../context/AuthContext";
 import type { ConversationWithDetails } from "../../../types/messaging";
 
+interface NotificationData {
+  conversationId: string;
+  userRole: 'organizer' | 'traveler';
+}
+
 const OrganizerChatScreen: React.FC = () => {
   const router = useRouter();
   const { conversationId } = useLocalSearchParams();
@@ -23,11 +31,29 @@ const OrganizerChatScreen: React.FC = () => {
     string | null
   >((conversationId as string) || null);
 
-  useEffect(() => {
-    if (conversationId && typeof conversationId === "string") {
-      setSelectedConversation(conversationId);
+useEffect(() => {
+  // Initialize notifications
+  NotificationService.initialize();
+
+  // Set up notification handler
+  const notificationListener = Notifications.addNotificationResponseReceivedListener(
+    (response) => {
+      const notificationData = response.notification.request.content.data as unknown;
+      const data = notificationData as NotificationData;
+      
+      if (data && 
+          typeof data.conversationId === 'string' && 
+          data.userRole === 'organizer') {
+        setSelectedConversation(data.conversationId);
+        router.push(`/(app)/organizer/chat?conversationId=${data.conversationId}`);
+      }
     }
-  }, [conversationId]);
+  );
+
+  return () => {
+    notificationListener.remove();
+  };
+}, []);
 
   const handleConversationSelect = (conversation: ConversationWithDetails) => {
     setSelectedConversation(conversation.id);
