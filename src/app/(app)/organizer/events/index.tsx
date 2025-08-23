@@ -114,10 +114,7 @@ export default function EventsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.headerTitle}>My Events</Text>
-          <Text style={styles.headerSubtitle}>
-            Manage your travel experiences
-          </Text>
+          <Text style={styles.headerTitle}>Events</Text>
         </View>
 
         <TouchableOpacity

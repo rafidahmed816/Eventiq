@@ -21,7 +21,7 @@ export default function EventsLayout() {
       <Stack.Screen
         name="index"
         options={{
-          title: "My Events",
+          title: "Events",
         }}
       />
       <Stack.Screen

@@ -1,18 +1,18 @@
 // app/(app)/traveler/events/index.tsx
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   Platform,
   RefreshControl,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { CategoryFilter } from "../../../../components/CategoryFilter";
 import { EventFeedCard } from "../../../../components/EventFeedCard";
 import { SearchBar } from "../../../../components/SearchBar";
@@ -42,6 +42,16 @@ export default function TravelerEventsScreen() {
   useEffect(() => {
     loadEvents(true);
   }, []);
+
+  // Refresh events when screen comes into focus (e.g., returning from booking)
+  useFocusEffect(
+    useCallback(() => {
+      // Only refresh if we're not already loading and have existing events
+      if (!loading && events.length > 0) {
+        loadEvents(true);
+      }
+    }, [loading, events.length])
+  );
 
   // Debounced search effect
   useEffect(() => {
@@ -107,7 +117,7 @@ export default function TravelerEventsScreen() {
       setRefreshing(false);
     }
   };
-
+  
   const handleSearch = async () => {
     try {
       setLoading(true);
@@ -261,7 +271,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8f9fa",
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   header: {
     backgroundColor: "white",

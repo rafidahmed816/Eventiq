@@ -95,7 +95,7 @@ export const createEvent = async (
     // Upload images if provided
     if (images && images.length > 0) {
       console.log(`Uploading ${images.length} images for event ${event.id}`);
-      
+
       const uploadPromises = images.map(async (imageUri, index) => {
         const fileName = `image_${index}`;
         const uploadResult = await uploadToStorage(
@@ -119,11 +119,13 @@ export const createEvent = async (
         .insert(uploadedImages);
 
       if (imagesError) {
-        console.error('Database images insert error:', imagesError);
+        console.error("Database images insert error:", imagesError);
         throw imagesError;
       }
-      
-      console.log(`Successfully uploaded and saved ${uploadedImages.length} images`);
+
+      console.log(
+        `Successfully uploaded and saved ${uploadedImages.length} images`
+      );
     }
 
     // Add spots if provided
@@ -143,15 +145,15 @@ export const createEvent = async (
 
     return event;
   } catch (error) {
-    console.error('Error during event creation, cleaning up...', error);
-    
+    console.error("Error during event creation, cleaning up...", error);
+
     // If image upload or spots creation fails, cleanup the created event
     try {
       await deleteEventWithCleanup(event.id);
     } catch (cleanupError) {
-      console.error('Cleanup failed:', cleanupError);
+      console.error("Cleanup failed:", cleanupError);
     }
-    
+
     throw error;
   }
 };
@@ -160,7 +162,7 @@ export const createEvent = async (
 const deleteEventWithCleanup = async (eventId: string): Promise<void> => {
   try {
     // First cleanup storage files if cleanupEventStorage is available
-    if (typeof cleanupEventStorage === 'function') {
+    if (typeof cleanupEventStorage === "function") {
       await cleanupEventStorage(eventId);
     } else {
       // Manual cleanup if function is not available
@@ -170,18 +172,19 @@ const deleteEventWithCleanup = async (eventId: string): Promise<void> => {
           .list(`events/${eventId}`, { limit: 100 });
 
         if (!listError && files && files.length > 0) {
-          const filePaths = files.map((file) => `events/${eventId}/${file.name}`);
+          const filePaths = files.map(
+            (file) => `events/${eventId}/${file.name}`
+          );
           await supabase.storage.from("event-images").remove(filePaths);
         }
       } catch (storageError) {
-        console.error('Manual storage cleanup error:', storageError);
+        console.error("Manual storage cleanup error:", storageError);
       }
     }
 
     // Then delete from database (cascade will handle related records)
     const { error } = await supabase.from("events").delete().eq("id", eventId);
     if (error) throw error;
-    
   } catch (error) {
     console.error("Delete event error:", error);
     throw new Error("Failed to delete event");
@@ -200,9 +203,37 @@ export const updateEvent = async (
 ): Promise<Event> => {
   const { spots, images, ...eventDetails } = eventData;
 
+  // If total_seats is being updated, we need to handle spots_remaining carefully
+  let updateData: any = { ...eventDetails };
+
+  if (eventDetails.total_seats !== undefined) {
+    // Get current event data to check existing bookings
+    const { data: currentEvent, error: fetchError } = await supabase
+      .from("events")
+      .select("total_seats, spots_remaining")
+      .eq("id", eventId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    // Calculate how many seats are currently booked
+    const currentlyBooked =
+      currentEvent.total_seats - currentEvent.spots_remaining;
+
+    // Ensure new total_seats is not less than currently booked seats
+    if (eventDetails.total_seats < currentlyBooked) {
+      throw new Error(
+        `Cannot reduce total seats to ${eventDetails.total_seats}. ${currentlyBooked} seats are already booked.`
+      );
+    }
+
+    // Calculate new spots_remaining
+    updateData.spots_remaining = eventDetails.total_seats - currentlyBooked;
+  }
+
   const { data, error } = await supabase
     .from("events")
-    .update(eventDetails)
+    .update(updateData)
     .eq("id", eventId)
     .select()
     .single();
@@ -315,7 +346,7 @@ export const deleteEventImage = async (imageUrl: string): Promise<void> => {
     if (urlParts.length < 2) {
       throw new Error("Invalid image URL format");
     }
-    
+
     const filePath = urlParts[1];
 
     const { error } = await supabase.storage

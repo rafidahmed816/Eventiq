@@ -18,6 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { CancelBookingButton } from "../../../../components/CancelBookingButton";
 import MessageButton from "../../../../components/MessageButton";
 import { useAuth } from "../../../../context/AuthContext";
+
 import {
   BookingWithEvent,
   cancelBooking,
@@ -530,9 +531,9 @@ export default function EventDetailScreen() {
           </View>
         ) : (
           // Show booking controls if no booking exists
-          <>
+          <View style={styles.bookingControls}>
             {/* Price Display Row */}
-            <View style={styles.priceRow}>
+            <View style={styles.priceDisplayRow}>
               <View style={styles.bookingInfo}>
                 <Text style={styles.totalPrice}>
                   ${(event.budget_per_person * seatsRequested).toFixed(2)}
@@ -541,10 +542,8 @@ export default function EventDetailScreen() {
                   {seatsRequested} seat{seatsRequested > 1 ? "s" : ""}
                 </Text>
               </View>
-            </View>
 
-            {/* Seat Selector and Book Button Row */}
-            <View style={styles.bookingRow}>
+              {/* Seat Selector */}
               <View style={styles.seatSelector}>
                 <TouchableOpacity
                   style={[
@@ -556,11 +555,7 @@ export default function EventDetailScreen() {
                   }
                   disabled={seatsRequested <= 1}
                 >
-                  <Ionicons
-                    name="remove"
-                    size={20}
-                    color={seatsRequested <= 1 ? "#ccc" : "#007AFF"}
-                  />
+                  <Text style={styles.seatButtonText}>-</Text>
                 </TouchableOpacity>
 
                 <Text style={styles.seatCount}>{seatsRequested}</Text>
@@ -578,37 +573,30 @@ export default function EventDetailScreen() {
                   }
                   disabled={seatsRequested >= event.spots_remaining}
                 >
-                  <Ionicons
-                    name="add"
-                    size={20}
-                    color={
-                      seatsRequested >= event.spots_remaining
-                        ? "#ccc"
-                        : "#007AFF"
-                    }
-                  />
+                  <Text style={styles.seatButtonText}>+</Text>
                 </TouchableOpacity>
               </View>
-
-              <TouchableOpacity
-                style={[
-                  styles.bookButton,
-                  (booking || event.spots_remaining === 0) &&
-                    styles.bookButtonDisabled,
-                ]}
-                onPress={handleBooking}
-                disabled={booking || event.spots_remaining === 0}
-              >
-                {booking ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <Text style={styles.bookButtonText}>
-                    {event.spots_remaining === 0 ? "Sold Out" : "Book Now"}
-                  </Text>
-                )}
-              </TouchableOpacity>
             </View>
-          </>
+
+            {/* Book Button */}
+            <TouchableOpacity
+              style={[
+                styles.bookButton,
+                (booking || event.spots_remaining === 0) &&
+                  styles.bookButtonDisabled,
+              ]}
+              onPress={handleBooking}
+              disabled={booking || event.spots_remaining === 0}
+            >
+              {booking ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Text style={styles.bookButtonText}>
+                  {event.spots_remaining === 0 ? "Sold Out" : "Book Now"}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
         )}
       </View>
     </SafeAreaView>
@@ -865,21 +853,19 @@ const styles = StyleSheet.create({
   messageRow: {
     marginBottom: 12,
   },
-
-  actionButtons: {
+  bookedContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
+    gap: 16,
   },
-  bookedContainer: {
-    flex: 1,
+  bookingControls: {
     gap: 12,
   },
-  bookingRow: {
+  priceDisplayRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
+    justifyContent: "space-between",
   },
   bookingInfo: {
     flex: 1,
@@ -916,6 +902,11 @@ const styles = StyleSheet.create({
   seatButtonDisabled: {
     backgroundColor: "#f5f5f5",
   },
+  seatButtonText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#007AFF",
+  },
   seatCount: {
     fontSize: 16,
     fontWeight: "600",
@@ -927,7 +918,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     paddingVertical: 14,
     borderRadius: 12,
-    flex: 1,
     alignItems: "center",
   },
   bookButtonDisabled: {

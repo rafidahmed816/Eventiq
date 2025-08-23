@@ -1,25 +1,16 @@
 // components/BookingCard.tsx
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import {
-  Alert,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { BookingWithEvent } from "../lib/traveler/bookings";
 
 interface BookingCardProps {
   booking: BookingWithEvent;
-  onCancel?: (bookingId: string) => void;
   onPress?: () => void;
 }
 
 export const BookingCard: React.FC<BookingCardProps> = ({
   booking,
-  onCancel,
   onPress,
 }) => {
   const getStatusColor = (status: string) => {
@@ -79,35 +70,6 @@ export const BookingCard: React.FC<BookingCardProps> = ({
     });
   };
 
-  const canCancel = () => {
-    const now = new Date();
-    const eventStart = new Date(booking.events.start_time);
-    const hoursUntilEvent =
-      (eventStart.getTime() - now.getTime()) / (1000 * 60 * 60);
-
-    return (
-      booking.status !== "cancelled" &&
-      hoursUntilEvent > (booking.events.cancellation_policy || 0)
-    );
-  };
-
-  const handleCancel = () => {
-    if (!onCancel) return;
-
-    Alert.alert(
-      "Cancel Booking",
-      `Are you sure you want to cancel your booking for "${booking.events.title}"?`,
-      [
-        { text: "Keep Booking", style: "cancel" },
-        {
-          text: "Cancel Booking",
-          style: "destructive",
-          onPress: () => onCancel(booking.id),
-        },
-      ]
-    );
-  };
-
   const renderImage = () => {
     const images = booking.events.event_images;
     if (!images || images.length === 0) {
@@ -128,93 +90,89 @@ export const BookingCard: React.FC<BookingCardProps> = ({
   };
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
-      {/* Event Image */}
-      {renderImage()}
+    <View style={styles.container}>
+      <TouchableOpacity
+        style={styles.card}
+        onPress={onPress}
+        activeOpacity={0.9}
+      >
+        {/* Event Image */}
+        <View style={styles.imageContainer}>{renderImage()}</View>
 
-      {/* Content */}
-      <View style={styles.content}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.titleSection}>
-            <Text style={styles.title} numberOfLines={1}>
-              {booking.events.title}
-            </Text>
-            <View style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>{booking.events.category}</Text>
+        {/* Content */}
+        <View style={styles.content}>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.titleSection}>
+              <Text style={styles.title} numberOfLines={1}>
+                {booking.events.title}
+              </Text>
+              <View style={styles.categoryBadge}>
+                <Text style={styles.categoryText}>
+                  {booking.events.category}
+                </Text>
+              </View>
+            </View>
+
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: getStatusColor(booking.status) },
+              ]}
+            >
+              <Text style={styles.statusText}>
+                {getStatusText(booking.status)}
+              </Text>
             </View>
           </View>
 
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: getStatusColor(booking.status) },
-            ]}
-          >
-            <Text style={styles.statusText}>
-              {getStatusText(booking.status)}
-            </Text>
-          </View>
-        </View>
+          {/* Event Details */}
+          <View style={styles.details}>
+            <View style={styles.detailRow}>
+              <Ionicons name="calendar-outline" size={16} color="#666" />
+              <Text style={styles.detailText}>
+                {formatDate(booking.events.start_time)} •{" "}
+                {formatTime(booking.events.start_time)}
+              </Text>
+            </View>
 
-        {/* Event Details */}
-        <View style={styles.details}>
-          <View style={styles.detailRow}>
-            <Ionicons name="calendar-outline" size={16} color="#666" />
-            <Text style={styles.detailText}>
-              {formatDate(booking.events.start_time)} •{" "}
-              {formatTime(booking.events.start_time)}
-            </Text>
-          </View>
+            <View style={styles.detailRow}>
+              <Ionicons name="people-outline" size={16} color="#666" />
+              <Text style={styles.detailText}>
+                {booking.seats_requested} seat
+                {booking.seats_requested > 1 ? "s" : ""}
+              </Text>
+            </View>
 
-          <View style={styles.detailRow}>
-            <Ionicons name="people-outline" size={16} color="#666" />
-            <Text style={styles.detailText}>
-              {booking.seats_requested} seat
-              {booking.seats_requested > 1 ? "s" : ""}
-            </Text>
-          </View>
+            <View style={styles.detailRow}>
+              <Ionicons name="cash-outline" size={16} color="#666" />
+              <Text style={styles.detailText}>
+                $
+                {(
+                  booking.events.budget_per_person * booking.seats_requested
+                ).toFixed(2)}{" "}
+                total
+              </Text>
+            </View>
 
-          <View style={styles.detailRow}>
-            <Ionicons name="cash-outline" size={16} color="#666" />
-            <Text style={styles.detailText}>
-              $
-              {(
-                booking.events.budget_per_person * booking.seats_requested
-              ).toFixed(2)}{" "}
-              total
-            </Text>
+            <View style={styles.detailRow}>
+              <Ionicons name="person-outline" size={16} color="#666" />
+              <Text style={styles.detailText}>
+                by {booking.events.profiles?.full_name || "Anonymous"}
+              </Text>
+            </View>
           </View>
 
-          <View style={styles.detailRow}>
-            <Ionicons name="person-outline" size={16} color="#666" />
-            <Text style={styles.detailText}>
-              by {booking.events.profiles?.full_name || "Anonymous"}
-            </Text>
-          </View>
-        </View>
-
-        {/* Actions */}
-        {booking.status !== "cancelled" && (
+          {/* View Details Button */}
           <View style={styles.actions}>
-            {canCancel() && (
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={handleCancel}
-              >
-                <Ionicons name="close-outline" size={16} color="#F44336" />
-                <Text style={styles.cancelButtonText}>Cancel Booking</Text>
-              </TouchableOpacity>
-            )}
-
             <TouchableOpacity style={styles.viewButton} onPress={onPress}>
               <Text style={styles.viewButtonText}>View Details</Text>
               <Ionicons name="chevron-forward" size={16} color="#007AFF" />
             </TouchableOpacity>
           </View>
-        )}
-      </View>
-    </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    </View>
   );
 };
 
@@ -241,15 +199,21 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   card: {
+    flexDirection: "column",
     overflow: "hidden",
   },
+  imageContainer: {
+    width: "100%",
+    height: scale(160),
+    backgroundColor: "#f5f5f5",
+  },
   eventImage: {
-    width: scale(100),
-    height: scale(120),
+    width: "100%",
+    height: "100%",
   },
   imagePlaceholder: {
-    width: scale(100),
-    height: scale(120),
+    width: "100%",
+    height: "100%",
     backgroundColor: "#f5f5f5",
     justifyContent: "center",
     alignItems: "center",
@@ -257,6 +221,8 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#eee",
   },
   header: {
     flexDirection: "row",
@@ -311,36 +277,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   actions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
     paddingTop: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: "#f0f0f0",
-  },
-  cancelButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    borderRadius: moderateScaling(8),
-    backgroundColor: "#ffebee",
-  },
-  cancelButtonText: {
-    fontSize: normalizeFont(13),
-    color: "#F44336",
-    fontWeight: "500",
+    marginTop: spacing.sm,
   },
   viewButton: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: spacing.xs,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: "#e3f2fd",
+    borderRadius: moderateScaling(8),
   },
   viewButtonText: {
-    fontSize: 13,
+    fontSize: normalizeFont(14),
     color: "#007AFF",
     fontWeight: "500",
   },

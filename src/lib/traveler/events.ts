@@ -51,6 +51,7 @@ export const fetchTravelerEvents = async (
       { count: "exact" }
     )
     .gt("spots_remaining", 0) // Only events with available spots
+    .gte("start_time", new Date().toISOString()) // Only show events that haven't started yet
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -171,6 +172,7 @@ export const searchEvents = async (
     )
     .or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`)
     .gt("spots_remaining", 0)
+    .gte("start_time", new Date().toISOString()) // Only show events that haven't started yet
     .order("created_at", { ascending: false })
     .limit(limit);
 

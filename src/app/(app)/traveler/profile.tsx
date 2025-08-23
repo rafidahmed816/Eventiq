@@ -9,6 +9,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  StatusBar,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -127,6 +128,7 @@ export default function TravelerProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+       <StatusBar barStyle="dark-content" backgroundColor="transparent" />
       <ScrollView
         style={styles.scrollView}
         refreshControl={
