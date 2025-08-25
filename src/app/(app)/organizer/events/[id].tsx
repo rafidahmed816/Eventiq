@@ -38,7 +38,6 @@ import {
   updateEvent,
 } from "../../../../lib/organizer/events";
 
-const { width } = Dimensions.get("window");
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -146,7 +145,9 @@ export default function EventDetailScreen() {
 
     Alert.alert(
       "Delete Event",
-      `Are you sure you want to delete "${event.title}"? This action cannot be undone.`,
+      `Are you sure you want to delete "${event.title}"?  
+      
+      This action cannot be undone.`,
       [
         { text: "Cancel", style: "cancel" },
         {

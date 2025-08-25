@@ -203,10 +203,37 @@ export default function RegisterScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={["#32DC96", "#20B576"]}
-        style={styles.backgroundGradient}
-      />
+      <View style={styles.backgroundContainer}>
+        <LinearGradient
+          colors={[
+            "#32DC96",
+            "#20B576",
+            "#1DA87A",
+            "#28E5A3",
+            "#40E8A8",
+            "#52EBAD",
+          ]}
+          locations={[0, 0.18, 0.36, 0.55, 0.75, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.backgroundGradient}
+        />
+      </View>
+
+      <View style={styles.particlesContainer} pointerEvents="none">
+        {[...Array(18)].map((_, i) => (
+          <View
+            key={i}
+            style={[
+              styles.particle,
+              {
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              },
+            ]}
+          />
+        ))}
+      </View>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -226,25 +253,14 @@ export default function RegisterScreen() {
               },
             ]}
           >
-            {/* Back Button - Fixed with proper handler */}
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={handleBack}
-              activeOpacity={0.7} // Added for better touch feedback
-            >
-              <Feather name="arrow-left" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
-
             {/* Header with Logo */}
             <View style={styles.header}>
               <View style={styles.logoContainer}>
-                <View style={styles.logoGradient}>
-                  <Image
-                    source={require("../../assets/images/eventiq-logo.png")}
-                    style={styles.logo}
-                    resizeMode="contain"
-                  />
-                </View>
+                <Image
+                  source={require("../../assets/images/eventiq-logo.png")}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
               </View>
               <Text style={styles.title}>Create Account</Text>
               <Text style={styles.subtitle}>

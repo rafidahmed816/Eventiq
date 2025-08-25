@@ -1,19 +1,39 @@
 // styles/register.ts
 import { Dimensions, StyleSheet } from "react-native";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
 export const registerStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F8F9FF",
   },
-  backgroundGradient: {
+  backgroundContainer: {
     position: "absolute",
+    top: -100,
+    left: -100,
+    right: -100,
+    bottom: -100,
+  },
+  backgroundGradient: {
+    flex: 1,
+    width: width + 200,
+    height: height + 200,
+  },
+  particlesContainer: {
+    position: "absolute",
+    top: 0,
     left: 0,
     right: 0,
-    top: 0,
-    height: 300,
+    bottom: 0,
+    overflow: "hidden",
+  },
+  particle: {
+    position: "absolute",
+    width: 4,
+    height: 4,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    borderRadius: 2,
   },
   keyboardView: {
     flex: 1,
@@ -21,11 +41,14 @@ export const registerStyles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  scrollContent: {
+    minHeight: height,
+  },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 40,
+    paddingHorizontal: 24,
+    justifyContent: "center",
+    paddingVertical: 56,
   },
   backButton: {
     position: "absolute",
@@ -74,11 +97,10 @@ export const registerStyles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    marginBottom: 40,
-    marginTop: 20,
+    marginBottom: 32,
   },
   logoContainer: {
-    marginBottom: 20,
+    marginBottom: 8, // Reduced spacing beneath logo
   },
   logoGradient: {
     width: 100,
@@ -97,25 +119,24 @@ export const registerStyles = StyleSheet.create({
     elevation: 8,
   },
   logo: {
-    width: 60,
-    height: 60,
+    width: 160,
+    height: 160,
   },
   title: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: "bold",
     color: "#FFFFFF",
-    marginBottom: 8,
+    marginBottom: 6,
+    textAlign: "center",
     textShadowColor: "rgba(0,0,0,0.3)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
   subtitle: {
     fontSize: 16,
-    color: "rgba(255,255,255,0.9)",
+    color: "rgba(255, 255, 255, 0.8)",
     textAlign: "center",
-    textShadowColor: "rgba(0,0,0,0.3)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    marginBottom: 16,
   },
   formCard: {
     backgroundColor: "#FFFFFF",
@@ -394,11 +415,8 @@ export const registerStyles = StyleSheet.create({
   },
   signupLink: {
     fontSize: 16,
-    color: "#32DC96",
-    fontWeight: "600",
+    color: "#ffffff",
+    fontWeight: "400",
     textDecorationLine: "underline",
-    textShadowColor: "rgba(0,0,0,0.3)", // Added text shadow
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
 });
