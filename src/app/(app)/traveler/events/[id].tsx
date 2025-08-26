@@ -18,7 +18,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { CancelBookingButton } from "../../../../components/CancelBookingButton";
 import MessageButton from "../../../../components/MessageButton";
 import { useAuth } from "../../../../context/AuthContext";
-
 import {
   BookingWithEvent,
   cancelBooking,
@@ -29,7 +28,6 @@ import {
   fetchEventDetails,
   TravelerEvent,
 } from "../../../../lib/traveler/events";
-
 const { width } = Dimensions.get("window");
 const IMAGE_HEIGHT = 250;
 
@@ -56,18 +54,6 @@ export default function EventDetailScreen() {
     try {
       setLoading(true);
       const eventData = await fetchEventDetails(id as string);
-
-      // Debug: Check for duplicate image IDs
-      if (eventData.images) {
-        const imageIds = eventData.images.map((img) => img.id);
-        const duplicates = imageIds.filter(
-          (id, index) => imageIds.indexOf(id) !== index
-        );
-        if (duplicates.length > 0) {
-          console.warn("Duplicate image IDs found:", duplicates);
-        }
-      }
-
       setEvent(eventData);
 
       // Check if user already has a booking for this event
@@ -76,23 +62,8 @@ export default function EventDetailScreen() {
           eventData.id,
           profile.id
         );
-
-        if (bookingData) {
-          // Convert Booking to BookingWithEvent
-          const bookingWithEvent: BookingWithEvent = {
-            ...bookingData,
-            events: {
-              ...eventData,
-              event_images: eventData.images || [],
-              profiles: eventData.organizer,
-            },
-          };
-          setExistingBooking(bookingWithEvent);
-          setHasExistingBooking(true);
-        } else {
-          setExistingBooking(null);
-          setHasExistingBooking(false);
-        }
+        setExistingBooking(bookingData);
+        setHasExistingBooking(!!bookingData);
 
         // Reset seat selector to 1 when loading event details
         setSeatsRequested(1);
@@ -297,9 +268,9 @@ export default function EventDetailScreen() {
           onScroll={handleScroll}
           scrollEventThrottle={16}
         >
-          {event.images.map((image, index) => (
+          {event.images.map((image) => (
             <Image
-              key={`${event.id}-image-${image.id}-${index}`}
+              key={image.id}
               source={{ uri: image.image_url }}
               style={[styles.image, { width }]}
               resizeMode="cover"
@@ -311,7 +282,7 @@ export default function EventDetailScreen() {
           <View style={styles.imageIndicators}>
             {event.images.map((_, index) => (
               <View
-                key={`${event.id}-indicator-${index}`}
+                key={index}
                 style={[
                   styles.indicator,
                   index === currentImageIndex && styles.activeIndicator,
@@ -456,10 +427,7 @@ export default function EventDetailScreen() {
             <View style={styles.spotsSection}>
               <Text style={styles.sectionTitle}>Places We'll Visit</Text>
               {event.spots.map((spot: any, index: number) => (
-                <View
-                  key={`${event.id}-spot-${spot.id}-${index}`}
-                  style={styles.spotItem}
-                >
+                <View key={spot.id} style={styles.spotItem}>
                   <View style={styles.spotNumber}>
                     <Text style={styles.spotNumberText}>{index + 1}</Text>
                   </View>
@@ -498,20 +466,34 @@ export default function EventDetailScreen() {
               )}
             </View>
           )}
+
+          {/* Message Organizer Button */}
+          {event.organizer && profile && (
+            <View style={styles.messageSection}>
+              <View style={styles.messageSectionHeader}>
+                <Ionicons
+                  name="chatbubble-ellipses-outline"
+                  size={20}
+                  color="#007AFF"
+                />
+                <Text style={styles.messageSectionTitle}>Have Questions?</Text>
+              </View>
+              <MessageButton
+                eventId={event.id}
+                organizerId={event.organizer_id}
+                currentUser={profile}
+                style={styles.customMessageButton}
+              />
+            </View>
+          )}
+
+          {/* Bottom spacing for scroll content */}
+          <View style={styles.scrollBottomSpacing} />
         </View>
       </ScrollView>
 
       {/* Booking Section */}
       <View style={styles.bookingSection}>
-        {/* Message Button - Always Available */}
-        <View style={styles.messageRow}>
-          <MessageButton
-            eventId={event.id}
-            organizerId={event.organizer_id}
-            currentUser={profile!}
-          />
-        </View>
-
         {hasExistingBooking && existingBooking ? (
           // Show booking status and cancel button if user has a booking
           <View style={styles.bookedContainer}>
@@ -530,55 +512,51 @@ export default function EventDetailScreen() {
             />
           </View>
         ) : (
-          // Show booking controls if no booking exists
-          <View style={styles.bookingControls}>
-            {/* Price Display Row */}
-            <View style={styles.priceDisplayRow}>
-              <View style={styles.bookingInfo}>
-                <Text style={styles.totalPrice}>
-                  ${(event.budget_per_person * seatsRequested).toFixed(2)}
-                </Text>
-                <Text style={styles.priceSubtext}>
-                  {seatsRequested} seat{seatsRequested > 1 ? "s" : ""}
-                </Text>
-              </View>
-
-              {/* Seat Selector */}
-              <View style={styles.seatSelector}>
-                <TouchableOpacity
-                  style={[
-                    styles.seatButton,
-                    seatsRequested <= 1 && styles.seatButtonDisabled,
-                  ]}
-                  onPress={() =>
-                    setSeatsRequested(Math.max(1, seatsRequested - 1))
-                  }
-                  disabled={seatsRequested <= 1}
-                >
-                  <Text style={styles.seatButtonText}>-</Text>
-                </TouchableOpacity>
-
-                <Text style={styles.seatCount}>{seatsRequested}</Text>
-
-                <TouchableOpacity
-                  style={[
-                    styles.seatButton,
-                    seatsRequested >= event.spots_remaining &&
-                      styles.seatButtonDisabled,
-                  ]}
-                  onPress={() =>
-                    setSeatsRequested(
-                      Math.min(event.spots_remaining, seatsRequested + 1)
-                    )
-                  }
-                  disabled={seatsRequested >= event.spots_remaining}
-                >
-                  <Text style={styles.seatButtonText}>+</Text>
-                </TouchableOpacity>
-              </View>
+          // Show booking button if no booking exists
+          <View style={styles.bookingRow}>
+            <View style={styles.bookingInfo}>
+              <Text style={styles.totalPrice}>
+                ${(event.budget_per_person * seatsRequested).toFixed(2)}
+              </Text>
+              <Text style={styles.priceSubtext}>
+                {seatsRequested} seat{seatsRequested > 1 ? "s" : ""}
+              </Text>
             </View>
 
-            {/* Book Button */}
+            {/* Seat Selector */}
+            <View style={styles.seatSelector}>
+              <TouchableOpacity
+                style={[
+                  styles.seatButton,
+                  seatsRequested <= 1 && styles.seatButtonDisabled,
+                ]}
+                onPress={() =>
+                  setSeatsRequested(Math.max(1, seatsRequested - 1))
+                }
+                disabled={seatsRequested <= 1}
+              >
+                <Text style={styles.seatButtonText}>-</Text>
+              </TouchableOpacity>
+
+              <Text style={styles.seatCount}>{seatsRequested}</Text>
+
+              <TouchableOpacity
+                style={[
+                  styles.seatButton,
+                  seatsRequested >= event.spots_remaining &&
+                    styles.seatButtonDisabled,
+                ]}
+                onPress={() =>
+                  setSeatsRequested(
+                    Math.min(event.spots_remaining, seatsRequested + 1)
+                  )
+                }
+                disabled={seatsRequested >= event.spots_remaining}
+              >
+                <Text style={styles.seatButtonText}>+</Text>
+              </TouchableOpacity>
+            </View>
+
             <TouchableOpacity
               style={[
                 styles.bookButton,
@@ -824,7 +802,7 @@ const styles = StyleSheet.create({
     color: "#007AFF",
   },
   policySection: {
-    marginBottom: 100,
+    marginBottom: 24,
   },
   policyText: {
     fontSize: 14,
@@ -849,23 +827,20 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#f0f0f0",
     minHeight: 90,
-  },
-  messageRow: {
-    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 8,
   },
   bookedContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 16,
-  },
-  bookingControls: {
+    flex: 1,
     gap: 12,
   },
-  priceDisplayRow: {
+  bookingRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 16,
   },
   bookingInfo: {
     flex: 1,
@@ -918,6 +893,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     paddingVertical: 14,
     borderRadius: 12,
+    flex: 1,
     alignItems: "center",
   },
   bookButtonDisabled: {
@@ -976,5 +952,38 @@ const styles = StyleSheet.create({
     height: 4,
     backgroundColor: "#d0d0d0",
     borderRadius: 2,
+  },
+  messageSection: {
+    marginBottom: 24,
+    backgroundColor: "#f8fafe",
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#e3f2fd",
+  },
+  messageSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  messageSectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1a1a1a",
+  },
+  customMessageButton: {
+    backgroundColor: "#007AFF",
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    shadowColor: "#007AFF",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  scrollBottomSpacing: {
+    height: 200, // Provides space for the fixed booking section
   },
 });

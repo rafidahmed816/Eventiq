@@ -564,7 +564,6 @@ export default function RegisterScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Enhanced Loading Screen */}
       {loading && (
         <Animated.View style={[styles.splashScreen, { opacity: animation }]}>
           <LinearGradient

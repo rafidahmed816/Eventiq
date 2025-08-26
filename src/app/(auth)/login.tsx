@@ -195,7 +195,6 @@ export default function LoginScreen() {
               },
             ]}
           >
-            {/* Enhanced Header with Logo and Title */}
             <View style={styles.header}>
                 <Image
                   source={require("../../assets/images/eventiq-logo.png")}

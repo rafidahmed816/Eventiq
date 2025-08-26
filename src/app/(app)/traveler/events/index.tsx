@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CategoryFilter } from "../../../../components/CategoryFilter";
 import { EventFeedCard } from "../../../../components/EventFeedCard";
+import { FilterModal } from "../../../../components/FilterModal";
 import { SearchBar } from "../../../../components/SearchBar";
 import {
   EventsResponse,
@@ -25,6 +26,13 @@ import {
 
 const ITEMS_PER_PAGE = 10;
 const SEARCH_DEBOUNCE_MS = 500;
+
+interface FilterOptions {
+  categories: string[];
+  priceRanges: string[];
+  durations: string[];
+  dates: string[];
+}
 
 export default function TravelerEventsScreen() {
   const [events, setEvents] = useState<TravelerEvent[]>([]);
@@ -38,6 +46,13 @@ export default function TravelerEventsScreen() {
   const [searchTimeout, setSearchTimeout] = useState<ReturnType<
     typeof setTimeout
   > | null>(null);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<FilterOptions>({
+    categories: [],
+    priceRanges: [],
+    durations: [],
+    dates: [],
+  });
 
   useEffect(() => {
     loadEvents(true);
@@ -117,7 +132,7 @@ export default function TravelerEventsScreen() {
       setRefreshing(false);
     }
   };
-  
+
   const handleSearch = async () => {
     try {
       setLoading(true);
@@ -147,6 +162,12 @@ export default function TravelerEventsScreen() {
     setRefreshing(true);
     setSearchQuery("");
     setSelectedCategory("All");
+    setActiveFilters({
+      categories: [],
+      priceRanges: [],
+      durations: [],
+      dates: [],
+    });
     loadEvents(true);
   };
 
@@ -171,6 +192,26 @@ export default function TravelerEventsScreen() {
 
   const handleSearchClear = () => {
     setSearchQuery("");
+  };
+
+  const handleFilterPress = () => {
+    setFilterModalVisible(true);
+  };
+
+  const handleFilterApply = (filters: FilterOptions) => {
+    setActiveFilters(filters);
+    // You can implement actual filtering logic here based on the filters
+    // For now, we'll trigger a search with the existing logic
+    loadEvents(true);
+  };
+
+  const getActiveFiltersCount = () => {
+    return (
+      activeFilters.categories.length +
+      activeFilters.priceRanges.length +
+      activeFilters.durations.length +
+      activeFilters.dates.length
+    );
   };
 
   const renderEventCard = ({
@@ -228,6 +269,8 @@ export default function TravelerEventsScreen() {
         value={searchQuery}
         onChangeText={setSearchQuery}
         onClear={handleSearchClear}
+        onFilterPress={handleFilterPress}
+        activeFiltersCount={getActiveFiltersCount()}
       />
 
       {/* Category Filter */}
@@ -263,6 +306,14 @@ export default function TravelerEventsScreen() {
           <Text style={styles.loadingText}>Loading events...</Text>
         </View>
       )}
+
+      {/* Filter Modal */}
+      <FilterModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        onApply={handleFilterApply}
+        initialFilters={activeFilters}
+      />
     </SafeAreaView>
   );
 }

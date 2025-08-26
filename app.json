@@ -34,7 +34,9 @@
           "image": "./src/assets/images/eventiq-logo.png",
           "imageWidth": 200
         }
-      ]
+      ],
+      "expo-font",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

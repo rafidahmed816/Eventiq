@@ -128,29 +128,34 @@ export const CancelBookingButton: React.FC<CancelBookingButtonProps> = ({
         ]}
         onPress={handleCancel}
         disabled={!cancellationInfo.canCancel || disabled}
+        activeOpacity={0.7}
       >
-        {disabled ? (
-          <ActivityIndicator size="small" color="#999" />
-        ) : (
-          <Ionicons
-            name="close-circle-outline"
-            size={18}
-            color={!cancellationInfo.canCancel || disabled ? "#999" : "#F44336"}
-          />
-        )}
-        <Text
-          style={[
-            styles.cancelButtonText,
-            (!cancellationInfo.canCancel || disabled) &&
-              styles.cancelButtonTextDisabled,
-          ]}
-        >
-          {disabled
-            ? "Cancelling..."
-            : !cancellationInfo.canCancel
-            ? "Cannot Cancel"
-            : "Cancel Booking"}
-        </Text>
+        <View style={styles.buttonContent}>
+          {disabled ? (
+            <ActivityIndicator size="small" color="#999" />
+          ) : (
+            <Ionicons
+              name="close-circle-outline"
+              size={18}
+              color={
+                !cancellationInfo.canCancel || disabled ? "#999" : "#F44336"
+              }
+            />
+          )}
+          <Text
+            style={[
+              styles.cancelButtonText,
+              (!cancellationInfo.canCancel || disabled) &&
+                styles.cancelButtonTextDisabled,
+            ]}
+          >
+            {disabled
+              ? "Cancelling..."
+              : !cancellationInfo.canCancel
+              ? "Cannot Cancel"
+              : "Cancel Booking"}
+          </Text>
+        </View>
       </TouchableOpacity>
 
       {/* Additional Info for Refunds */}
@@ -163,43 +168,50 @@ export const CancelBookingButton: React.FC<CancelBookingButtonProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 12,
-    gap: 8,
+    width: "100%",
+    gap: 10,
   },
   policyContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     backgroundColor: "#f8f9fa",
-    borderRadius: 8,
+    borderRadius: 10,
     borderLeftWidth: 3,
     borderLeftColor: "#ddd",
   },
   policyText: {
-    fontSize: 12,
+    fontSize: 13,
     flex: 1,
-    lineHeight: 16,
+    lineHeight: 18,
   },
   cancelButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: "#ffebee",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#ffcdd2",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  buttonContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: "#ffebee",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#ffcdd2",
   },
   cancelButtonDisabled: {
     backgroundColor: "#f5f5f5",
     borderColor: "#e0e0e0",
   },
   cancelButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
     color: "#F44336",
   },
@@ -207,10 +219,11 @@ const styles = StyleSheet.create({
     color: "#999",
   },
   refundText: {
-    fontSize: 11,
+    fontSize: 12,
     color: "#666",
     fontStyle: "italic",
     textAlign: "center",
-    lineHeight: 14,
+    lineHeight: 16,
+    marginTop: 4,
   },
 });

@@ -1,4 +1,3 @@
-
 // styles/register.ts
 import { Dimensions, StyleSheet } from "react-native";
 
@@ -53,22 +52,22 @@ export const loginStyles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    marginBottom: 40,
+    marginBottom: 20,
   },
   logoContainer: {
-    marginBottom: 24,
+    marginBottom: 2, 
     shadowColor: "#32DC96",
     shadowOffset: {
       width: 0,
-      height: 10,
+      height: 6,
     },
     shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 10,
   },
   logoWrapper: {
-    width: 120,
-    height: 120,
+    width: 100,
+    height: 100,
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: 60,
     justifyContent: "center",
@@ -83,11 +82,11 @@ export const loginStyles = StyleSheet.create({
     elevation: 10,
   },
   logo: {
-    width: 180,
-    height: 180,
+    width: 180, // slightly smaller to reduce vertical footprint
+    height: 160,
   },
   title: {
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: "bold",
     color: "#FFFFFF",
     marginBottom: 8,

@@ -36,7 +36,7 @@ export function EventsList({
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) {
-      return `Ended ${Math.abs(diffDays)} day${
+      return `Started ${Math.abs(diffDays)} day${
         Math.abs(diffDays) === 1 ? "" : "s"
       } ago`;
     } else if (diffDays === 0) {
