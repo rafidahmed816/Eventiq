@@ -1,26 +1,26 @@
 // app/(onboard)/index.tsx
-import React, { useState } from 'react';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
+import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
   Dimensions,
-  TouchableOpacity,
+  Image,
   SafeAreaView,
-  Image, // Import Image component for displaying images
-} from 'react-native';
-import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import PagerView from 'react-native-pager-view';
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import PagerView from "react-native-pager-view";
 
-const { width } = Dimensions.get('window');
-const ONBOARDING_KEY = 'onboarding_completed';
+const { width } = Dimensions.get("window");
+const ONBOARDING_KEY = "onboarding_completed";
 
 interface OnboardingSlide {
-  key: string; // Use 'key' for consistency with React keys and the slides array
+  key: string;
+  text: string;
   title: string;
-  text: string; // Change 'text' from 'description'
-  image: any; // 'any' is used for imported assets
+  image: any;
   backgroundColor: string;
 }
 
@@ -50,16 +50,16 @@ const slides: OnboardingSlide[] = [
 
 export default function OnboardingScreen() {
   const [currentPage, setCurrentPage] = useState(0);
+  const pagerRef = React.useRef<PagerView>(null);
 
   const handleComplete = async () => {
     try {
-      await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
-      // Using router.replace ensures the user can't go back to the onboarding screen
-      router.replace('/(auth)/login');
+      await AsyncStorage.setItem(ONBOARDING_KEY, "true");
+
+      router.replace("/(auth)/login");
     } catch (error) {
-      console.error('Error saving onboarding status:', error);
-      // In case of error, still proceed to the login screen
-      router.replace('/(auth)/login');
+      console.error("Error saving onboarding status:", error);
+      router.replace("/(auth)/login");
     }
   };
 
@@ -69,17 +69,17 @@ export default function OnboardingScreen() {
 
   const goToNext = () => {
     if (currentPage < slides.length - 1) {
-      // Use PagerView's setPage method to animate the transition
-      // We need a ref for this. Let's add that.
-      // For now, let's keep it simple and just update the state.
-      setCurrentPage(currentPage + 1);
+      pagerRef.current?.setPage(currentPage + 1);
     } else {
       handleComplete();
     }
   };
 
   const renderSlide = (slide: OnboardingSlide, index: number) => (
-    <View key={slide.key} style={[styles.slide, { backgroundColor: slide.backgroundColor }]}>
+    <View
+      key={slide.key}
+      style={[styles.slide, { backgroundColor: slide.backgroundColor }]}
+    >
       <View style={styles.content}>
         {/* Render the image from the slide object */}
         <Image source={slide.image} style={styles.image} resizeMode="contain" />
@@ -98,6 +98,7 @@ export default function OnboardingScreen() {
       </View>
 
       <PagerView
+        ref={pagerRef}
         style={styles.pager}
         initialPage={0}
         onPageSelected={(e) => setCurrentPage(e.nativeEvent.position)}
@@ -108,19 +109,23 @@ export default function OnboardingScreen() {
       <View style={styles.footer}>
         <View style={styles.pagination}>
           {slides.map((_, index) => (
-            <View
+            <TouchableOpacity
               key={index}
-              style={[
-                styles.paginationDot,
-                index === currentPage && styles.paginationDotActive,
-              ]}
-            />
+              onPress={() => pagerRef.current?.setPage(index)}
+            >
+              <View
+                style={[
+                  styles.paginationDot,
+                  index === currentPage && styles.paginationDotActive,
+                ]}
+              />
+            </TouchableOpacity>
           ))}
         </View>
 
         <TouchableOpacity onPress={goToNext} style={styles.nextButton}>
           <Text style={styles.nextButtonText}>
-            {currentPage === slides.length - 1 ? "Let's Get Started" : 'Next'}
+            {currentPage === slides.length - 1 ? "Let's Get Started" : "Next"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -135,8 +140,8 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingTop: 10,
-    alignItems: 'flex-end',
-    position: 'absolute',
+    alignItems: "flex-end",
+    position: "absolute",
     top: 0,
     right: 0,
     zIndex: 1, // Ensure the header is on top of the PagerView
@@ -146,20 +151,20 @@ const styles = StyleSheet.create({
   },
   skipText: {
     fontSize: 16,
-    color: '#666666',
-    fontWeight: '500',
+    color: "#666666",
+    fontWeight: "500",
   },
   pager: {
     flex: 1,
   },
   slide: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 40,
   },
   content: {
-    alignItems: 'center',
+    alignItems: "center",
     maxWidth: 300,
   },
   image: {
@@ -169,51 +174,51 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#1A1A1A",
+    textAlign: "center",
     marginBottom: 16,
   },
   description: {
     fontSize: 16,
-    color: '#666666',
-    textAlign: 'center',
+    color: "#666666",
+    textAlign: "center",
     lineHeight: 24,
   },
   footer: {
     paddingHorizontal: 20,
     paddingBottom: 40,
-    alignItems: 'center',
-    position: 'absolute',
+    alignItems: "center",
+    position: "absolute",
     bottom: 0,
-    width: '100%',
+    width: "100%",
   },
   pagination: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 30,
   },
   paginationDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: "#E0E0E0",
     marginHorizontal: 4,
   },
   paginationDotActive: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     width: 20,
   },
   nextButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     paddingHorizontal: 40,
     paddingVertical: 16,
     borderRadius: 25,
     minWidth: 200,
   },
   nextButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
   },
 });
