@@ -57,7 +57,7 @@ export default function TravelerLayout() {
         name="events"
         options={{
           // title: "Events",
-          // tabBarLabel: "Events",
+          tabBarLabel: "Events",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar" size={size} color={color} />
           ),

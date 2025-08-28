@@ -1,18 +1,45 @@
 // components/BookingCard.tsx
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { canUserReview, hasUserReviewed } from "../lib/reviews";
 import { BookingWithEvent } from "../lib/traveler/bookings";
 
 interface BookingCardProps {
   booking: BookingWithEvent;
   onPress?: () => void;
+  onReviewPress?: (booking: BookingWithEvent) => void;
+  userId?: string;
 }
 
 export const BookingCard: React.FC<BookingCardProps> = ({
   booking,
   onPress,
+  onReviewPress,
+  userId,
 }) => {
+  const [canReview, setCanReview] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
+
+  useEffect(() => {
+    const checkReviewStatus = async () => {
+      if (!userId) return;
+
+      try {
+        const [canReviewResult, hasReviewedResult] = await Promise.all([
+          canUserReview(booking.events.id, userId),
+          hasUserReviewed(booking.events.id, userId),
+        ]);
+
+        setCanReview(canReviewResult);
+        setHasReviewed(hasReviewedResult);
+      } catch (error) {
+        console.error("Error checking review status:", error);
+      }
+    };
+
+    checkReviewStatus();
+  }, [booking.events.id, userId]);
   const getStatusColor = (status: string) => {
     switch (status) {
       case "confirmed":
@@ -163,12 +190,29 @@ export const BookingCard: React.FC<BookingCardProps> = ({
             </View>
           </View>
 
-          {/* View Details Button */}
+          {/* Actions */}
           <View style={styles.actions}>
             <TouchableOpacity style={styles.viewButton} onPress={onPress}>
               <Text style={styles.viewButtonText}>View Details</Text>
               <Ionicons name="chevron-forward" size={16} color="#007AFF" />
             </TouchableOpacity>
+
+            {canReview && !hasReviewed && onReviewPress && (
+              <TouchableOpacity
+                style={styles.reviewButton}
+                onPress={() => onReviewPress(booking)}
+              >
+                <Ionicons name="star-outline" size={16} color="#FFD700" />
+                <Text style={styles.reviewButtonText}>Rate & Review</Text>
+              </TouchableOpacity>
+            )}
+
+            {hasReviewed && (
+              <View style={styles.reviewedBadge}>
+                <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                <Text style={styles.reviewedBadgeText}>Reviewed</Text>
+              </View>
+            )}
           </View>
         </View>
       </TouchableOpacity>
@@ -281,6 +325,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: "#f0f0f0",
     marginTop: spacing.sm,
+    gap: spacing.sm,
   },
   viewButton: {
     flexDirection: "row",
@@ -295,6 +340,38 @@ const styles = StyleSheet.create({
   viewButtonText: {
     fontSize: normalizeFont(14),
     color: "#007AFF",
+    fontWeight: "500",
+  },
+  reviewButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: "#fff8e1",
+    borderRadius: moderateScaling(8),
+    borderWidth: 1,
+    borderColor: "#FFD700",
+  },
+  reviewButtonText: {
+    fontSize: normalizeFont(14),
+    color: "#F57F17",
+    fontWeight: "500",
+  },
+  reviewedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: "#f0f8f0",
+    borderRadius: moderateScaling(8),
+  },
+  reviewedBadgeText: {
+    fontSize: normalizeFont(14),
+    color: "#4CAF50",
     fontWeight: "500",
   },
 });

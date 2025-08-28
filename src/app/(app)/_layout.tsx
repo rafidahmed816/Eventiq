@@ -4,7 +4,6 @@ import React, { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 
-
 export default function AppLayout() {
   const { profile, loading } = useAuth();
   const router = useRouter();
@@ -13,7 +12,7 @@ export default function AppLayout() {
       if (profile) {
         console.log("Current user role:", profile.role);
       }
-      
+
       if (profile?.role === "organizer") {
         console.log("Redirecting to organizer layout");
         router.replace("/(app)/organizer/events");

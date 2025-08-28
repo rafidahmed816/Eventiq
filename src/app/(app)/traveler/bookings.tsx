@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BookingCard } from "../../../components/BookingCard";
+import { ReviewModal } from "../../../components/ReviewModal";
 import { useAuth } from "../../../context/AuthContext";
 import {
   BookingWithEvent,
@@ -42,6 +43,9 @@ export default function BookingsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState<BookingFilter>("all");
   const [cancelling, setCancelling] = useState<string | null>(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedBookingForReview, setSelectedBookingForReview] =
+    useState<BookingWithEvent | null>(null);
 
   useEffect(() => {
     loadBookings();
@@ -129,6 +133,17 @@ export default function BookingsScreen() {
     router.push(`/(app)/traveler/events/${booking.events.id}`);
   };
 
+  const handleReviewPress = (booking: BookingWithEvent) => {
+    setSelectedBookingForReview(booking);
+    setShowReviewModal(true);
+  };
+
+  const handleReviewSubmitted = () => {
+    setSelectedBookingForReview(null);
+    // Refresh bookings to update review status
+    loadBookings();
+  };
+
   const renderFilterTab = ({
     item,
   }: {
@@ -184,6 +199,8 @@ export default function BookingsScreen() {
     <BookingCard
       booking={item}
       onPress={() => handleBookingPress(item)}
+      onReviewPress={handleReviewPress}
+      userId={profile?.id}
     />
   );
 
@@ -232,7 +249,6 @@ export default function BookingsScreen() {
             <Text style={styles.browseButtonText}>Browse Events</Text>
           </TouchableOpacity>
         ) : null}
-
       </View>
     );
   };
@@ -286,7 +302,23 @@ export default function BookingsScreen() {
         showsVerticalScrollIndicator={false}
       />
 
-      
+      {/* Review Modal */}
+      {selectedBookingForReview && profile && (
+        <ReviewModal
+          visible={showReviewModal}
+          onClose={() => {
+            setShowReviewModal(false);
+            setSelectedBookingForReview(null);
+          }}
+          eventId={selectedBookingForReview.events.id}
+          userId={profile.id}
+          organizerName={
+            selectedBookingForReview.events.profiles?.full_name ||
+            "the organizer"
+          }
+          onReviewSubmitted={handleReviewSubmitted}
+        />
+      )}
     </SafeAreaView>
   );
 }

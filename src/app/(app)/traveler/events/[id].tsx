@@ -18,6 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { CancelBookingButton } from "../../../../components/CancelBookingButton";
 import MessageButton from "../../../../components/MessageButton";
 import { useAuth } from "../../../../context/AuthContext";
+
 import {
   BookingWithEvent,
   cancelBooking,
@@ -28,8 +29,18 @@ import {
   fetchEventDetails,
   TravelerEvent,
 } from "../../../../lib/traveler/events";
+
+import { ReviewModal } from "../../../../components/ReviewModal";
+import { StarRating } from "../../../../components/StarRating";
+import {
+  canUserReview,
+  getOrganizerAverageRating,
+  hasUserReviewed,
+} from "../../../../lib/reviews";
+
 const { width } = Dimensions.get("window");
 const IMAGE_HEIGHT = 250;
+const PRIMARY_COLOR = "#32DC96"; // Brand primary color
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -43,12 +54,29 @@ export default function EventDetailScreen() {
   const [existingBooking, setExistingBooking] =
     useState<BookingWithEvent | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [canReview, setCanReview] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [organizerRating, setOrganizerRating] = useState<{
+    avgRating: number;
+    totalReviews: number;
+  }>({
+    avgRating: 0,
+    totalReviews: 0,
+  });
 
   useEffect(() => {
     if (id) {
       loadEventDetails();
     }
   }, [id]);
+
+  // Check review status when booking state changes
+  useEffect(() => {
+    if (event && profile?.id) {
+      checkReviewStatus();
+    }
+  }, [event, hasExistingBooking, profile?.id]);
 
   const loadEventDetails = async () => {
     try {
@@ -57,7 +85,7 @@ export default function EventDetailScreen() {
       setEvent(eventData);
 
       // Check if user already has a booking for this event
-      if (profile?.id) {
+      if (profile && profile.id) {
         const bookingData = await checkExistingBooking(
           eventData.id,
           profile.id
@@ -67,6 +95,9 @@ export default function EventDetailScreen() {
 
         // Reset seat selector to 1 when loading event details
         setSeatsRequested(1);
+
+        // Check review status after loading event
+        await checkReviewStatus();
       }
     } catch (error) {
       console.error("Load event details error:", error);
@@ -76,9 +107,41 @@ export default function EventDetailScreen() {
       setLoading(false);
     }
   };
+  const checkReviewStatus = async () => {
+    if (!event || !profile || !profile.id) return;
+
+    try {
+      console.log(
+        "Checking review status for event:",
+        event.id,
+        "user:",
+        profile.id
+      );
+
+      const [canReviewResult, hasReviewedResult, ratingData] =
+        await Promise.all([
+          canUserReview(event.id, profile.id),
+          hasUserReviewed(event.id, profile.id),
+          getOrganizerAverageRating(event.organizer_id),
+        ]);
+
+      console.log("Review status results:", {
+        canReview: canReviewResult,
+        hasReviewed: hasReviewedResult,
+        eventEndTime: event.end_time,
+        now: new Date().toISOString(),
+      });
+
+      setCanReview(canReviewResult);
+      setHasReviewed(hasReviewedResult);
+      setOrganizerRating(ratingData);
+    } catch (error) {
+      console.error("Error checking review status:", error);
+    }
+  };
 
   const handleBooking = async () => {
-    if (!event || !profile?.id) {
+    if (!event || !profile || !profile.id) {
       Alert.alert("Error", "Unable to process booking");
       return;
     }
@@ -144,6 +207,9 @@ export default function EventDetailScreen() {
               setExistingBooking(bookingWithEvent);
               setHasExistingBooking(true);
 
+              // Check review status after booking is created
+              await checkReviewStatus();
+
               InteractionManager.runAfterInteractions(() => {
                 Alert.alert("Success", "Your booking has been confirmed!", [
                   {
@@ -172,7 +238,12 @@ export default function EventDetailScreen() {
       ]
     );
   };
-
+  const handleReviewSubmitted = () => {
+    setHasReviewed(true);
+    setCanReview(false);
+    // Refresh organizer rating
+    checkReviewStatus();
+  };
   const handleCancelBooking = async (bookingId: string) => {
     if (!existingBooking) return;
 
@@ -366,17 +437,64 @@ export default function EventDetailScreen() {
               )}
             </View>
             <View style={styles.organizerInfo}>
-              <Text style={styles.organizerName}>
-                {event.organizer?.full_name || "Anonymous"}
-              </Text>
-              <Text style={styles.organizerLabel}>Event Organizer</Text>
+              <View style={styles.organizerNameRow}>
+                <Text style={styles.organizerName}>
+                  {event.organizer?.full_name || "Anonymous"}
+                </Text>
+                {organizerRating.totalReviews > 0 && (
+                  <View style={styles.organizerRating}>
+                    <StarRating
+                      rating={Math.round(organizerRating.avgRating)}
+                      size={14}
+                      color="#FFD700"
+                    />
+                    <Text style={styles.ratingText}>
+                      {organizerRating.avgRating.toFixed(1)} (
+                      {organizerRating.totalReviews})
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <View style={styles.organizerActions}>
+                <Text style={styles.organizerLabel}>Event Organizer</Text>
+                {organizerRating.totalReviews > 0 && (
+                  <TouchableOpacity
+                    style={styles.reviewsButton}
+                    onPress={() =>
+                      router.push({
+                        pathname:
+                          "/(app)/traveler/events/reviews/[organizerId]",
+                        params: {
+                          organizerId: event.organizer_id,
+                          organizerName:
+                            event.organizer?.full_name || "Organizer",
+                        },
+                      })
+                    }
+                  >
+                    <Ionicons
+                      name="chatbubble-ellipses-outline"
+                      size={14}
+                      color="#007AFF"
+                    />
+                    <Text style={styles.reviewsButtonText}>
+                      {organizerRating.totalReviews} review
+                      {organizerRating.totalReviews !== 1 ? "s" : ""}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
 
           {/* Date & Time Info */}
           <View style={styles.infoSection}>
             <View style={styles.infoRow}>
-              <Ionicons name="calendar-outline" size={20} color="#007AFF" />
+              <Ionicons
+                name="calendar-outline"
+                size={20}
+                color={PRIMARY_COLOR}
+              />
               <View style={styles.infoText}>
                 <Text style={styles.infoTitle}>Date</Text>
                 <Text style={styles.infoValue}>
@@ -386,7 +504,7 @@ export default function EventDetailScreen() {
             </View>
 
             <View style={styles.infoRow}>
-              <Ionicons name="time-outline" size={20} color="#007AFF" />
+              <Ionicons name="time-outline" size={20} color={PRIMARY_COLOR} />
               <View style={styles.infoText}>
                 <Text style={styles.infoTitle}>Time</Text>
                 <Text style={styles.infoValue}>
@@ -396,7 +514,11 @@ export default function EventDetailScreen() {
             </View>
 
             <View style={styles.infoRow}>
-              <Ionicons name="hourglass-outline" size={20} color="#007AFF" />
+              <Ionicons
+                name="hourglass-outline"
+                size={20}
+                color={PRIMARY_COLOR}
+              />
               <View style={styles.infoText}>
                 <Text style={styles.infoTitle}>Duration</Text>
                 <Text style={styles.infoValue}>{getDuration()}</Text>
@@ -404,7 +526,7 @@ export default function EventDetailScreen() {
             </View>
 
             <View style={styles.infoRow}>
-              <Ionicons name="people-outline" size={20} color="#007AFF" />
+              <Ionicons name="people-outline" size={20} color={PRIMARY_COLOR} />
               <View style={styles.infoText}>
                 <Text style={styles.infoTitle}>Available Seats</Text>
                 <Text style={styles.infoValue}>
@@ -474,7 +596,7 @@ export default function EventDetailScreen() {
                 <Ionicons
                   name="chatbubble-ellipses-outline"
                   size={20}
-                  color="#007AFF"
+                  color={PRIMARY_COLOR}
                 />
                 <Text style={styles.messageSectionTitle}>Have Questions?</Text>
               </View>
@@ -487,96 +609,139 @@ export default function EventDetailScreen() {
             </View>
           )}
 
-          {/* Bottom spacing for scroll content */}
+          {/* Booking / Review Section integrated in scroll */}
+          <View>
+            {canReview && !hasReviewed && profile ? (
+              <View style={styles.reviewCard}>
+                <View style={styles.reviewCardHeader}>
+                  <Ionicons
+                    name="star-outline"
+                    size={28}
+                    color={PRIMARY_COLOR}
+                  />
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={styles.reviewCardTitle}>
+                      Share Your Experience
+                    </Text>
+                    <Text style={styles.reviewCardSubtitle}>
+                      Rate and review{" "}
+                      {event.organizer?.full_name || "the organizer"}
+                    </Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  style={styles.primaryButton}
+                  onPress={() => setShowReviewModal(true)}
+                >
+                  <Text style={styles.primaryButtonText}>Rate & Review</Text>
+                </TouchableOpacity>
+              </View>
+            ) : hasReviewed ? (
+              <View style={styles.thanksCard}>
+                <Ionicons name="checkmark-circle" size={28} color="#4CAF50" />
+                <Text style={styles.thanksText}>
+                  Thank you for your review!
+                </Text>
+              </View>
+            ) : hasExistingBooking && existingBooking ? (
+              <View style={styles.bookedCard}>
+                <View style={styles.bookedCardHeader}>
+                  <Ionicons
+                    name="ticket-outline"
+                    size={24}
+                    color={PRIMARY_COLOR}
+                  />
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={styles.bookedTitle}>You're booked!</Text>
+                    <Text style={styles.bookedSubtitle}>
+                      {existingBooking.seats_requested} seat
+                      {existingBooking.seats_requested > 1 ? "s" : ""} reserved
+                    </Text>
+                  </View>
+                  <CancelBookingButton
+                    booking={existingBooking}
+                    onCancel={handleCancelBooking}
+                    disabled={cancelling}
+                  />
+                </View>
+              </View>
+            ) : (
+              <View style={styles.bookingCard}>
+                <View style={styles.priceBlock}>
+                  <Text style={styles.totalPrice}>
+                    ${(event.budget_per_person * seatsRequested).toFixed(2)}
+                  </Text>
+                  <Text style={styles.priceSubtext}>
+                    {seatsRequested} seat{seatsRequested > 1 ? "s" : ""}
+                  </Text>
+                </View>
+                <View style={styles.seatSelector}>
+                  <TouchableOpacity
+                    style={[
+                      styles.seatButton,
+                      seatsRequested <= 1 && styles.seatButtonDisabled,
+                    ]}
+                    onPress={() =>
+                      setSeatsRequested(Math.max(1, seatsRequested - 1))
+                    }
+                    disabled={seatsRequested <= 1}
+                  >
+                    <Text style={styles.seatButtonText}>-</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.seatCount}>{seatsRequested}</Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.seatButton,
+                      seatsRequested >= event.spots_remaining &&
+                        styles.seatButtonDisabled,
+                    ]}
+                    onPress={() =>
+                      setSeatsRequested(
+                        Math.min(event.spots_remaining, seatsRequested + 1)
+                      )
+                    }
+                    disabled={seatsRequested >= event.spots_remaining}
+                  >
+                    <Text style={styles.seatButtonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.primaryButton,
+                    (booking || event.spots_remaining === 0) &&
+                      styles.primaryButtonDisabled,
+                  ]}
+                  onPress={handleBooking}
+                  disabled={booking || event.spots_remaining === 0}
+                >
+                  {booking ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <Text style={styles.primaryButtonText}>
+                      {event.spots_remaining === 0 ? "Sold Out" : "Book Now"}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          {/* Small bottom spacer */}
           <View style={styles.scrollBottomSpacing} />
         </View>
       </ScrollView>
 
-      {/* Booking Section */}
-      <View style={styles.bookingSection}>
-        {hasExistingBooking && existingBooking ? (
-          // Show booking status and cancel button if user has a booking
-          <View style={styles.bookedContainer}>
-            <View style={styles.bookingInfo}>
-              <Text style={styles.bookedText}>You're booked!</Text>
-              <Text style={styles.priceSubtext}>
-                {existingBooking.seats_requested} seat
-                {existingBooking.seats_requested > 1 ? "s" : ""} reserved
-              </Text>
-            </View>
-
-            <CancelBookingButton
-              booking={existingBooking}
-              onCancel={handleCancelBooking}
-              disabled={cancelling}
-            />
-          </View>
-        ) : (
-          // Show booking button if no booking exists
-          <View style={styles.bookingRow}>
-            <View style={styles.bookingInfo}>
-              <Text style={styles.totalPrice}>
-                ${(event.budget_per_person * seatsRequested).toFixed(2)}
-              </Text>
-              <Text style={styles.priceSubtext}>
-                {seatsRequested} seat{seatsRequested > 1 ? "s" : ""}
-              </Text>
-            </View>
-
-            {/* Seat Selector */}
-            <View style={styles.seatSelector}>
-              <TouchableOpacity
-                style={[
-                  styles.seatButton,
-                  seatsRequested <= 1 && styles.seatButtonDisabled,
-                ]}
-                onPress={() =>
-                  setSeatsRequested(Math.max(1, seatsRequested - 1))
-                }
-                disabled={seatsRequested <= 1}
-              >
-                <Text style={styles.seatButtonText}>-</Text>
-              </TouchableOpacity>
-
-              <Text style={styles.seatCount}>{seatsRequested}</Text>
-
-              <TouchableOpacity
-                style={[
-                  styles.seatButton,
-                  seatsRequested >= event.spots_remaining &&
-                    styles.seatButtonDisabled,
-                ]}
-                onPress={() =>
-                  setSeatsRequested(
-                    Math.min(event.spots_remaining, seatsRequested + 1)
-                  )
-                }
-                disabled={seatsRequested >= event.spots_remaining}
-              >
-                <Text style={styles.seatButtonText}>+</Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={[
-                styles.bookButton,
-                (booking || event.spots_remaining === 0) &&
-                  styles.bookButtonDisabled,
-              ]}
-              onPress={handleBooking}
-              disabled={booking || event.spots_remaining === 0}
-            >
-              {booking ? (
-                <ActivityIndicator size="small" color="white" />
-              ) : (
-                <Text style={styles.bookButtonText}>
-                  {event.spots_remaining === 0 ? "Sold Out" : "Book Now"}
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
+      {/* Review Modal */}
+      {profile && (
+        <ReviewModal
+          visible={showReviewModal}
+          onClose={() => setShowReviewModal(false)}
+          eventId={event.id}
+          userId={profile.id}
+          organizerName={event.organizer?.full_name || "the organizer"}
+          onReviewSubmitted={handleReviewSubmitted}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -759,7 +924,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "#007AFF",
+    backgroundColor: PRIMARY_COLOR,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -799,7 +964,7 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#007AFF",
+    color: PRIMARY_COLOR,
   },
   policySection: {
     marginBottom: 24,
@@ -815,24 +980,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginTop: 8,
   },
-  bookingSection: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "white",
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 34,
-    borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
-    minHeight: 90,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 8,
-  },
+  // bookingSection removed; integrated into scroll
   bookedContainer: {
     flex: 1,
     gap: 12,
@@ -853,7 +1001,7 @@ const styles = StyleSheet.create({
   totalPrice: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#007AFF",
+    color: PRIMARY_COLOR,
   },
   priceSubtext: {
     fontSize: 14,
@@ -880,7 +1028,7 @@ const styles = StyleSheet.create({
   seatButtonText: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#007AFF",
+    color: PRIMARY_COLOR,
   },
   seatCount: {
     fontSize: 16,
@@ -888,22 +1036,7 @@ const styles = StyleSheet.create({
     color: "#1a1a1a",
     paddingHorizontal: 16,
   },
-  bookButton: {
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 12,
-    flex: 1,
-    alignItems: "center",
-  },
-  bookButtonDisabled: {
-    backgroundColor: "#ccc",
-  },
-  bookButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-  },
+  // Legacy book button styles removed
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -973,17 +1106,133 @@ const styles = StyleSheet.create({
     color: "#1a1a1a",
   },
   customMessageButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: PRIMARY_COLOR,
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    shadowColor: "#007AFF",
+    shadowColor: PRIMARY_COLOR,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
   },
-  scrollBottomSpacing: {
-    height: 200, // Provides space for the fixed booking section
+  scrollBottomSpacing: { height: 40 },
+  organizerNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 4,
   },
+  organizerRating: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  ratingText: {
+    fontSize: 12,
+    color: "#666",
+    fontWeight: "500",
+  },
+  organizerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  reviewsButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    backgroundColor: "#f0f8ff",
+    borderRadius: 12,
+  },
+  reviewsButtonText: {
+    fontSize: 12,
+    color: PRIMARY_COLOR,
+    fontWeight: "500",
+  },
+  reviewedContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+    backgroundColor: "#f0f8f0",
+    borderRadius: 12,
+    margin: 20,
+    gap: 8,
+  },
+  reviewedText: {
+    fontSize: 16,
+    color: "#4CAF50",
+    fontWeight: "600",
+  },
+  // New integrated booking/review styles
+  bookingCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#e8f9f0",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    marginBottom: 24,
+    flexWrap: "wrap",
+  },
+  priceBlock: { flex: 1 },
+  primaryButton: {
+    backgroundColor: PRIMARY_COLOR,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    flex: 1,
+  },
+  primaryButtonDisabled: {
+    backgroundColor: "#b5eeda",
+  },
+  primaryButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  bookedCard: {
+    backgroundColor: "#f0fdf6",
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#dcf7e7",
+    marginBottom: 24,
+  },
+  bookedCardHeader: { flexDirection: "row", alignItems: "center" },
+  bookedTitle: { fontSize: 18, fontWeight: "700", color: PRIMARY_COLOR },
+  bookedSubtitle: { fontSize: 14, color: "#555", marginTop: 2 },
+  reviewCard: {
+    backgroundColor: "#f4fef9",
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#dcf7e7",
+    marginBottom: 24,
+  },
+  reviewCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  reviewCardTitle: { fontSize: 18, fontWeight: "700", color: "#1a1a1a" },
+  reviewCardSubtitle: { fontSize: 14, color: "#555", marginTop: 4 },
+  thanksCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f0f8f0",
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#d8f1d8",
+    marginBottom: 24,
+    gap: 10,
+  },
+  thanksText: { fontSize: 16, fontWeight: "600", color: "#4CAF50" },
 });

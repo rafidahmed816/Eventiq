@@ -273,12 +273,6 @@ export default function TravelerEventsScreen() {
         activeFiltersCount={getActiveFiltersCount()}
       />
 
-      {/* Category Filter */}
-      <CategoryFilter
-        selectedCategory={selectedCategory}
-        onCategoryChange={handleCategoryChange}
-      />
-
       {/* Events List */}
       <FlatList
         data={events}
