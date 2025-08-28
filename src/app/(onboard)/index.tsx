@@ -12,7 +12,7 @@ import {
   View,
 } from "react-native";
 import PagerView from "react-native-pager-view";
-
+import {CONSTANTS} from '@/src/constants/constants';
 const { width } = Dimensions.get("window");
 const ONBOARDING_KEY = "onboarding_completed";
 
@@ -205,11 +205,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   paginationDotActive: {
-    backgroundColor: "#007AFF",
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
     width: 20,
   },
   nextButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
     paddingHorizontal: 40,
     paddingVertical: 16,
     borderRadius: 25,

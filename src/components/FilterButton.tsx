@@ -2,6 +2,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { CONSTANTS } from "../constants/constants";
 
 interface FilterButtonProps {
   onPress: () => void;
@@ -14,7 +15,7 @@ export const FilterButton: React.FC<FilterButtonProps> = ({
 }) => {
   return (
     <TouchableOpacity style={styles.filterButton} onPress={onPress}>
-      <Ionicons name="options-outline" size={20} color="#007AFF" />
+      <Ionicons name="options-outline" size={20} color={CONSTANTS.PRIMARY_COLOR} />
       {activeFiltersCount > 0 && (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{activeFiltersCount}</Text>

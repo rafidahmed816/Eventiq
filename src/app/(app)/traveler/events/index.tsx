@@ -23,6 +23,7 @@ import {
   searchEvents,
   TravelerEvent,
 } from "../../../../lib/traveler/events";
+import { CONSTANTS } from "@/src/constants/constants";
 
 const ITEMS_PER_PAGE = 10;
 const SEARCH_DEBOUNCE_MS = 500;
@@ -231,7 +232,7 @@ export default function TravelerEventsScreen() {
 
     return (
       <View style={styles.loadingFooter}>
-        <ActivityIndicator size="small" color="#007AFF" />
+        <ActivityIndicator size="small" color={CONSTANTS.PRIMARY_COLOR} />
         <Text style={styles.loadingText}>Loading more events...</Text>
       </View>
     );
@@ -283,7 +284,7 @@ export default function TravelerEventsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#007AFF"
+            tintColor={CONSTANTS.PRIMARY_COLOR}
           />
         }
         onEndReached={handleLoadMore}
@@ -296,7 +297,7 @@ export default function TravelerEventsScreen() {
       {/* Loading Overlay */}
       {loading && events.length === 0 && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color={CONSTANTS.PRIMARY_COLOR} />
           <Text style={styles.loadingText}>Loading events...</Text>
         </View>
       )}

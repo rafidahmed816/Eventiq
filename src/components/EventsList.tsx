@@ -11,7 +11,7 @@ import {
   View,
 } from "react-native";
 import { Event } from "../lib/organizer/events";
-
+import { CONSTANTS } from "../constants/constants";
 interface EventsListProps {
   events: Event[];
   loading: boolean;
@@ -69,7 +69,7 @@ export function EventsList({
     } else if (event.spots_remaining === 0) {
       return "#FF9800"; // Full
     } else {
-      return "#007AFF"; // Upcoming
+      return CONSTANTS.PRIMARY_COLOR; // Upcoming
     }
   };
 
@@ -117,7 +117,7 @@ export function EventsList({
                 onPress={() => router.push(`/organizer/events/${event.id}`)}
                 style={styles.editButton}
               >
-                <Ionicons name="pencil" size={18} color="#007AFF" />
+                <Ionicons name="pencil" size={18} color={CONSTANTS.PRIMARY_COLOR} />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -173,7 +173,7 @@ export function EventsList({
               style={styles.quickActionButton}
               onPress={() => router.push(`/organizer/events/${event.id}`)}
             >
-              <Ionicons name="eye-outline" size={16} color="#007AFF" />
+              <Ionicons name="eye-outline" size={16} color={CONSTANTS.PRIMARY_COLOR} />
               <Text style={styles.quickActionText}>View Details</Text>
             </TouchableOpacity>
 
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#007AFF",
+    color: CONSTANTS.PRIMARY_COLOR,
     marginBottom: 4,
   },
   statLabel: {
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
   },
   quickActionText: {
     fontSize: 14,
-    color: "#007AFF",
+    color: CONSTANTS.PRIMARY_COLOR,
     fontWeight: "500",
   },
   bottomSpacing: {

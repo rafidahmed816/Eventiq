@@ -40,7 +40,7 @@ import {
 
 const { width } = Dimensions.get("window");
 const IMAGE_HEIGHT = 250;
-const PRIMARY_COLOR = "#32DC96"; // Brand primary color
+import {CONSTANTS} from "../../../../constants/constants";
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -369,7 +369,7 @@ export default function EventDetailScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={CONSTANTS.PRIMARY_COLOR} />
         <Text style={styles.loadingText}>Loading event details...</Text>
       </View>
     );
@@ -475,7 +475,7 @@ export default function EventDetailScreen() {
                     <Ionicons
                       name="chatbubble-ellipses-outline"
                       size={14}
-                      color="#007AFF"
+                      color={CONSTANTS.PRIMARY_COLOR}
                     />
                     <Text style={styles.reviewsButtonText}>
                       {organizerRating.totalReviews} review
@@ -493,7 +493,7 @@ export default function EventDetailScreen() {
               <Ionicons
                 name="calendar-outline"
                 size={20}
-                color={PRIMARY_COLOR}
+                color={CONSTANTS.PRIMARY_COLOR}
               />
               <View style={styles.infoText}>
                 <Text style={styles.infoTitle}>Date</Text>
@@ -504,7 +504,7 @@ export default function EventDetailScreen() {
             </View>
 
             <View style={styles.infoRow}>
-              <Ionicons name="time-outline" size={20} color={PRIMARY_COLOR} />
+              <Ionicons name="time-outline" size={20} color={CONSTANTS.PRIMARY_COLOR} />
               <View style={styles.infoText}>
                 <Text style={styles.infoTitle}>Time</Text>
                 <Text style={styles.infoValue}>
@@ -517,7 +517,7 @@ export default function EventDetailScreen() {
               <Ionicons
                 name="hourglass-outline"
                 size={20}
-                color={PRIMARY_COLOR}
+                color={CONSTANTS.PRIMARY_COLOR}
               />
               <View style={styles.infoText}>
                 <Text style={styles.infoTitle}>Duration</Text>
@@ -526,7 +526,7 @@ export default function EventDetailScreen() {
             </View>
 
             <View style={styles.infoRow}>
-              <Ionicons name="people-outline" size={20} color={PRIMARY_COLOR} />
+              <Ionicons name="people-outline" size={20} color={CONSTANTS.PRIMARY_COLOR} />
               <View style={styles.infoText}>
                 <Text style={styles.infoTitle}>Available Seats</Text>
                 <Text style={styles.infoValue}>
@@ -596,7 +596,7 @@ export default function EventDetailScreen() {
                 <Ionicons
                   name="chatbubble-ellipses-outline"
                   size={20}
-                  color={PRIMARY_COLOR}
+                  color={CONSTANTS.PRIMARY_COLOR}
                 />
                 <Text style={styles.messageSectionTitle}>Have Questions?</Text>
               </View>
@@ -617,7 +617,7 @@ export default function EventDetailScreen() {
                   <Ionicons
                     name="star-outline"
                     size={28}
-                    color={PRIMARY_COLOR}
+                    color={CONSTANTS.PRIMARY_COLOR}
                   />
                   <View style={{ flex: 1, marginLeft: 12 }}>
                     <Text style={styles.reviewCardTitle}>
@@ -649,7 +649,7 @@ export default function EventDetailScreen() {
                   <Ionicons
                     name="ticket-outline"
                     size={24}
-                    color={PRIMARY_COLOR}
+                    color={CONSTANTS.PRIMARY_COLOR}
                   />
                   <View style={{ flex: 1, marginLeft: 12 }}>
                     <Text style={styles.bookedTitle}>You're booked!</Text>
@@ -924,7 +924,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: PRIMARY_COLOR,
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -964,7 +964,7 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 20,
     fontWeight: "700",
-    color: PRIMARY_COLOR,
+    color: CONSTANTS.PRIMARY_COLOR,
   },
   policySection: {
     marginBottom: 24,
@@ -1001,7 +1001,7 @@ const styles = StyleSheet.create({
   totalPrice: {
     fontSize: 24,
     fontWeight: "700",
-    color: PRIMARY_COLOR,
+    color: CONSTANTS.PRIMARY_COLOR,
   },
   priceSubtext: {
     fontSize: 14,
@@ -1028,7 +1028,7 @@ const styles = StyleSheet.create({
   seatButtonText: {
     fontSize: 18,
     fontWeight: "600",
-    color: PRIMARY_COLOR,
+    color: CONSTANTS.PRIMARY_COLOR,
   },
   seatCount: {
     fontSize: 16,
@@ -1062,7 +1062,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   backButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
@@ -1106,11 +1106,11 @@ const styles = StyleSheet.create({
     color: "#1a1a1a",
   },
   customMessageButton: {
-    backgroundColor: PRIMARY_COLOR,
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    shadowColor: PRIMARY_COLOR,
+    shadowColor: CONSTANTS.PRIMARY_COLOR,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -1149,7 +1149,7 @@ const styles = StyleSheet.create({
   },
   reviewsButtonText: {
     fontSize: 12,
-    color: PRIMARY_COLOR,
+    color: CONSTANTS.PRIMARY_COLOR,
     fontWeight: "500",
   },
   reviewedContainer: {
@@ -1182,7 +1182,7 @@ const styles = StyleSheet.create({
   },
   priceBlock: { flex: 1 },
   primaryButton: {
-    backgroundColor: PRIMARY_COLOR,
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: "center",
@@ -1205,7 +1205,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   bookedCardHeader: { flexDirection: "row", alignItems: "center" },
-  bookedTitle: { fontSize: 18, fontWeight: "700", color: PRIMARY_COLOR },
+  bookedTitle: { fontSize: 18, fontWeight: "700", color: CONSTANTS.PRIMARY_COLOR },
   bookedSubtitle: { fontSize: 14, color: "#555", marginTop: 2 },
   reviewCard: {
     backgroundColor: "#f4fef9",

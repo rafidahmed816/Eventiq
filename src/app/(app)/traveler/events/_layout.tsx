@@ -10,7 +10,7 @@ export default function EventsLayout() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="[id]" />
-      <Stack.Screen name="reviews/[organizerId]" />
+      <Stack.Screen name="reviews" options={{ presentation: "modal" }} />
     </Stack>
   );
 }

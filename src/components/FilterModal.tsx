@@ -11,7 +11,7 @@ import {
   View,
 } from "react-native";
 import { EVENT_CATEGORIES } from "../lib/organizer/events";
-
+import {CONSTANTS} from "../constants/constants";
 const { height: screenHeight } = Dimensions.get("window");
 
 interface FilterOptions {
@@ -141,7 +141,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                 {label}
               </Text>
               {isSelected && (
-                <Ionicons name="checkmark" size={16} color="#007AFF" />
+                <Ionicons name="checkmark" size={16} color={CONSTANTS.PRIMARY_COLOR} />
               )}
             </TouchableOpacity>
           );
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   },
   clearAllText: {
     fontSize: 16,
-    color: "#007AFF",
+    color: CONSTANTS.PRIMARY_COLOR,
     fontWeight: "500",
   },
   content: {
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
     borderColor: "#e0e0e0",
   },
   filterOptionSelected: {
-    borderColor: "#007AFF",
+    borderColor: CONSTANTS.PRIMARY_COLOR,
     backgroundColor: "#f0f8ff",
   },
   filterOptionText: {
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   filterOptionTextSelected: {
-    color: "#007AFF",
+    color: CONSTANTS.PRIMARY_COLOR,
     fontWeight: "500",
   },
   footer: {
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     borderTopColor: "#f0f0f0",
   },
   applyButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",

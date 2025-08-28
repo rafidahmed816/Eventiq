@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { MessagingService } from "../lib/messaging";
 import type { Profile } from "../types/messaging";
-
+import { CONSTANTS } from "../constants/constants";
 interface MessageButtonProps {
   eventId: string;
   organizerId: string;
@@ -82,7 +82,7 @@ const MessageButton: React.FC<MessageButtonProps> = ({
 
 const styles = StyleSheet.create({
   messageButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,

@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { MessagingService } from "../lib/messaging";
 import type { ConversationWithDetails, Profile } from "../types/messaging";
-
+import {CONSTANTS} from "../constants/constants";
 interface ConversationListProps {
   currentUser: Profile;
   onConversationSelect?: (conversation: ConversationWithDetails) => void;
@@ -182,7 +182,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={CONSTANTS.PRIMARY_COLOR} />
       </View>
     );
   }
@@ -224,7 +224,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
         <RefreshControl
           refreshing={refreshing}
           onRefresh={handleRefresh}
-          tintColor="#007AFF"
+          tintColor={CONSTANTS.PRIMARY_COLOR}
         />
       }
       style={styles.list}
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   browseButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: "#007AFF",
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   unreadBadge: {
-    backgroundColor: "#007AFF",
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
     borderRadius: 10,
     minWidth: 20,
     height: 20,

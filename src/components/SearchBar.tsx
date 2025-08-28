@@ -55,7 +55,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
         {onFilterPress && (
           <TouchableOpacity style={styles.filterButton} onPress={onFilterPress}>
-            <Ionicons name="options-outline" size={20} color="#007AFF" />
+            <Ionicons name="options-outline" size={20} color={CONSTANTS.PRIMARY_COLOR} />
             {activeFiltersCount > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{activeFiltersCount}</Text>
@@ -74,6 +74,7 @@ import {
   scale,
   spacing,
 } from "../utils/scaling";
+import { CONSTANTS } from "../constants/constants";
 
 const styles = StyleSheet.create({
   container: {

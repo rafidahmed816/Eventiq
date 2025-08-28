@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { StarRating } from "./StarRating";
 import { createReview } from "../lib/reviews";
+import { CONSTANTS } from "../constants/constants";
 
 interface ReviewSectionProps {
   eventId: string;
@@ -79,7 +80,7 @@ export const ReviewSection: React.FC<ReviewSectionProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Ionicons name="star-outline" size={24} color="#007AFF" />
+        <Ionicons name="star-outline" size={24} color={CONSTANTS.PRIMARY_COLOR} />
         <Text style={styles.title}>Rate & Review</Text>
       </View>
       
@@ -207,11 +208,11 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   submitButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: "center",
-    shadowColor: "#007AFF",
+    shadowColor: CONSTANTS.PRIMARY_COLOR,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,

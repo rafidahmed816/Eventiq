@@ -11,9 +11,8 @@ import {
   View,
 } from "react-native";
 import { TravelerEvent } from "../lib/traveler/events";
-
 import { scale, spacing } from "../utils/scaling";
-
+import { CONSTANTS } from "../constants/constants";
 const CARD_WIDTH = Dimensions.get("window").width - spacing.md * 2;
 const IMAGE_HEIGHT = scale(180);
 
@@ -271,7 +270,7 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#007AFF",
+    color: CONSTANTS.PRIMARY_COLOR,
   },
   priceLabel: {
     fontSize: 12,

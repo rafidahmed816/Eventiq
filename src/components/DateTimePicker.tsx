@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
+import { CONSTANTS } from "../constants/constants";
 interface DateTimePickerComponentProps {
   label: string;
   value: string;
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   doneButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
     margin: 16,
     padding: 12,
     borderRadius: 8,

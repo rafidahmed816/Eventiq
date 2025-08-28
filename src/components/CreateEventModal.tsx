@@ -16,7 +16,7 @@ import { DateTimePickerComponent } from "./DateTimePicker";
 import { FormInput } from "./FormInput";
 import { ImagePickerModal } from "./ImagePickerModal";
 import { ImageSelectionGrid } from "./ImageSelectionGrid";
-
+import { CONSTANTS } from "../constants/constants";
 interface CreateEventModalProps {
   visible: boolean;
   onClose: () => void;
@@ -156,7 +156,7 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
             <Text style={styles.title}>Create Event</Text>
             <TouchableOpacity onPress={handleSubmit} disabled={creating}>
               {creating ? (
-                <ActivityIndicator size="small" color="#007AFF" />
+                <ActivityIndicator size="small" color={CONSTANTS.PRIMARY_COLOR} />
               ) : (
                 <Text style={styles.saveButton}>Create</Text>
               )}
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     fontSize: 16,
-    color: "#007AFF",
+    color: CONSTANTS.PRIMARY_COLOR,
     fontWeight: "600",
   },
   disabledText: {

@@ -15,7 +15,7 @@ import { ChatScreen } from "../../../components/ChatScreen";
 import ConversationList from "../../../components/ConversationList";
 import { useAuth } from "../../../context/AuthContext";
 import type { ConversationWithDetails } from "../../../types/messaging";
-
+import { CONSTANTS } from "@/src/constants/constants";
 const TravelerChatScreen: React.FC = () => {
   const router = useRouter();
   const { conversationId } = useLocalSearchParams();
@@ -48,7 +48,7 @@ const TravelerChatScreen: React.FC = () => {
           backgroundColor="transparent"
           translucent
         />
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={CONSTANTS.PRIMARY_COLOR} />
         <Text style={styles.loadingText}>Loading messages...</Text>
       </SafeAreaView>
     );

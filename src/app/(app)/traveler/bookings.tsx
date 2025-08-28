@@ -23,7 +23,7 @@ import {
   cancelBooking,
   fetchUserBookings,
 } from "../../../lib/traveler/bookings";
-
+import { CONSTANTS } from "@/src/constants/constants";
 type BookingFilter = "all" | "upcoming" | "past" | "cancelled";
 
 const FILTER_OPTIONS: { key: BookingFilter; label: string }[] = [
@@ -257,7 +257,7 @@ export default function BookingsScreen() {
     return (
       <SafeAreaView style={styles.loadingContainer}>
         <StatusBar barStyle="dark-content" backgroundColor="transparent" />
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={CONSTANTS.PRIMARY_COLOR} />
         <Text style={styles.loadingText}>Loading your bookings...</Text>
       </SafeAreaView>
     );
@@ -295,7 +295,7 @@ export default function BookingsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#007AFF"
+            tintColor={CONSTANTS.PRIMARY_COLOR}
           />
         }
         ListEmptyComponent={renderEmptyState}
@@ -371,8 +371,8 @@ const styles = StyleSheet.create({
     height: 32,
   },
   activeFilterTab: {
-    backgroundColor: "#007AFF",
-    borderColor: "#007AFF",
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
+    borderColor: CONSTANTS.PRIMARY_COLOR,
   },
   filterTabText: {
     fontSize: 13,
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
   filterBadgeText: {
     fontSize: 10,
     fontWeight: "600",
-    color: "#007AFF",
+    color: CONSTANTS.PRIMARY_COLOR,
   },
   listContainer: {
     paddingTop: 8,
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   browseButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,

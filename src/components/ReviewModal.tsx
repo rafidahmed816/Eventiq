@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { createReview } from "../lib/reviews";
 import { StarRating } from "./StarRating";
-
+import { CONSTANTS } from "../constants/constants";
 const { height } = Dimensions.get("window");
 
 interface ReviewModalProps {
@@ -298,11 +298,11 @@ const styles = StyleSheet.create({
     borderTopColor: "#f0f0f0",
   },
   submitButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
     borderRadius: 16,
     paddingVertical: 18,
     alignItems: "center",
-    shadowColor: "#007AFF",
+    shadowColor: CONSTANTS.PRIMARY_COLOR,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import { EVENT_CATEGORIES } from "../lib/organizer/events";
-
+import { CONSTANTS } from "../constants/constants"; 
 interface CategoryPickerProps {
   selectedCategory: string;
   onSelectCategory: (category: string) => void;
@@ -78,7 +78,7 @@ export const CategoryPicker: React.FC<CategoryPickerProps> = ({
                     {category}
                   </Text>
                   {selectedCategory === category && (
-                    <Ionicons name="checkmark" size={20} color="#007AFF" />
+                    <Ionicons name="checkmark" size={20} color={CONSTANTS.PRIMARY_COLOR} />
                   )}
                 </TouchableOpacity>
               ))}
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   selectedOptionText: {
-    color: "#007AFF",
+    color: CONSTANTS.PRIMARY_COLOR,
     fontWeight: "500",
   },
 });

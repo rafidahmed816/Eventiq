@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StarRating } from "../../../../../components/StarRating";
 import { getOrganizerReviews, getOrganizerAverageRating, Review } from "../../../../../lib/reviews";
-
+import { CONSTANTS } from "@/src/constants/constants";
 export default function OrganizerReviewsScreen() {
   const { organizerId, organizerName } = useLocalSearchParams();
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -124,7 +124,7 @@ export default function OrganizerReviewsScreen() {
           <View style={styles.placeholder} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color={CONSTANTS.PRIMARY_COLOR} />
           <Text style={styles.loadingText}>Loading reviews...</Text>
         </View>
       </SafeAreaView>
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   averageRating: {
     fontSize: 32,
     fontWeight: "700",
-    color: "#007AFF",
+    color: CONSTANTS.PRIMARY_COLOR,
   },
   totalReviews: {
     fontSize: 14,

@@ -38,7 +38,7 @@ import {
   updateEvent,
 } from "../../../../lib/organizer/events";
 
-
+import {CONSTANTS} from "../../../../constants/constants";
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -304,7 +304,7 @@ export default function EventDetailScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={CONSTANTS.PRIMARY_COLOR} />
         <Text style={styles.loadingText}>Loading event details...</Text>
       </View>
     );
@@ -336,7 +336,7 @@ export default function EventDetailScreen() {
       <View style={styles.statusBarSpace} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#007AFF" />
+          <Ionicons name="arrow-back" size={24} color={CONSTANTS.PRIMARY_COLOR} />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>Event Details</Text>
@@ -348,7 +348,7 @@ export default function EventDetailScreen() {
                 onPress={() => setEditing(true)}
                 style={styles.actionButton}
               >
-                <Ionicons name="pencil" size={20} color="#007AFF" />
+                <Ionicons name="pencil" size={20} color={CONSTANTS.PRIMARY_COLOR} />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleDeleteEvent}
@@ -405,10 +405,10 @@ export default function EventDetailScreen() {
                 ]}
               >
                 {uploadingImage ? (
-                  <ActivityIndicator size="small" color="#007AFF" />
+                <ActivityIndicator size="small" color={CONSTANTS.PRIMARY_COLOR} />
                 ) : (
                   <>
-                    <Ionicons name="camera-outline" size={16} color="#007AFF" />
+                    <Ionicons name="camera-outline" size={16} color={CONSTANTS.PRIMARY_COLOR} />
                     <Text style={styles.addImageText}>Add</Text>
                   </>
                 )}
@@ -735,7 +735,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffe6e6",
   },
   saveButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
   },
   cancelText: {
     color: "#666",
@@ -776,7 +776,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   backButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -821,7 +821,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   addImageText: {
-    color: "#007AFF",
+    color: CONSTANTS.PRIMARY_COLOR,
     fontSize: 12,
     fontWeight: "500",
   },

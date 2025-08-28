@@ -19,7 +19,7 @@ import type {
   Message,
   Profile,
 } from "../types/messaging";
-
+import { CONSTANTS } from "../constants/constants";
 export { ChatScreen };
 
 interface ChatScreenProps {
@@ -212,7 +212,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({
     return (
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Ionicons name="arrow-back" size={24} color="#007AFF" />
+          <Ionicons name="arrow-back" size={24} color={CONSTANTS.PRIMARY_COLOR} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>
@@ -256,7 +256,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={CONSTANTS.PRIMARY_COLOR} />
       </View>
     );
   }
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   ownMessageBubble: {
-    backgroundColor: "#007AFF",
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
   },
   otherMessageBubble: {
     backgroundColor: "#fff",
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   sendButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,

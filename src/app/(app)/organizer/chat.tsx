@@ -14,7 +14,7 @@ import { ChatScreen } from "../../../components/ChatScreen";
 import ConversationList from "../../../components/ConversationList";
 import { useAuth } from "../../../context/AuthContext";
 import type { ConversationWithDetails } from "../../../types/messaging";
-
+import {CONSTANTS} from "../../../constants/constants";
 const OrganizerChatScreen: React.FC = () => {
   const router = useRouter();
   const { conversationId } = useLocalSearchParams();
@@ -47,7 +47,7 @@ const OrganizerChatScreen: React.FC = () => {
           backgroundColor="transparent"
           translucent
         />
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={CONSTANTS.PRIMARY_COLOR} />
         <Text style={styles.loadingText}>Loading messages...</Text>
       </SafeAreaView>
     );

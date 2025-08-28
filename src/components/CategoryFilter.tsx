@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import { EVENT_CATEGORIES } from "../lib/traveler/events";
-
+import { CONSTANTS } from "../constants/constants";
 interface CategoryFilterProps {
   selectedCategory: string;
   onCategoryChange: (category: string) => void;
@@ -74,8 +74,8 @@ const styles = StyleSheet.create({
     borderColor: "#e9ecef",
   },
   selectedCategoryButton: {
-    backgroundColor: "#007AFF",
-    borderColor: "#007AFF",
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
+    borderColor: CONSTANTS.PRIMARY_COLOR,
   },
   categoryText: {
     fontSize: normalizeFont(14),

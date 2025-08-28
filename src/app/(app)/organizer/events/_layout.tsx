@@ -1,13 +1,13 @@
 import { Stack } from "expo-router";
 import React from "react";
-
+import { CONSTANTS } from "@/src/constants/constants";
 export default function EventsLayout() {
   return (
     <Stack
       screenOptions={{
         headerShown: false,
         headerStyle: {
-          backgroundColor: "#007AFF",
+          backgroundColor: CONSTANTS.PRIMARY_COLOR,
         },
         headerTintColor: "#FFFFFF",
         headerTitleStyle: {

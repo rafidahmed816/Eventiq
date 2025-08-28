@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { canUserReview, hasUserReviewed } from "../lib/reviews";
 import { BookingWithEvent } from "../lib/traveler/bookings";
+import { CONSTANTS } from "../constants/constants";
 
 interface BookingCardProps {
   booking: BookingWithEvent;
@@ -194,7 +195,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
           <View style={styles.actions}>
             <TouchableOpacity style={styles.viewButton} onPress={onPress}>
               <Text style={styles.viewButtonText}>View Details</Text>
-              <Ionicons name="chevron-forward" size={16} color="#007AFF" />
+              <Ionicons name="chevron-forward" size={16} color={CONSTANTS.PRIMARY_COLOR} />
             </TouchableOpacity>
 
             {canReview && !hasReviewed && onReviewPress && (
@@ -339,7 +340,7 @@ const styles = StyleSheet.create({
   },
   viewButtonText: {
     fontSize: normalizeFont(14),
-    color: "#007AFF",
+    color: CONSTANTS.PRIMARY_COLOR,
     fontWeight: "500",
   },
   reviewButton: {

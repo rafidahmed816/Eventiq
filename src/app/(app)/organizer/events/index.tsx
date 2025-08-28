@@ -22,7 +22,7 @@ import {
   Event,
   fetchOrganizerEvents,
 } from "../../../../lib/organizer/events";
-
+import { CONSTANTS } from "@/src/constants/constants";
 export default function EventsScreen() {
   const { user, profile } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
@@ -102,7 +102,7 @@ export default function EventsScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={CONSTANTS.PRIMARY_COLOR} />
         <Text style={styles.loadingText}>Loading your events...</Text>
       </SafeAreaView>
     );
@@ -194,12 +194,12 @@ const styles = StyleSheet.create({
   createButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#007AFF",
+    backgroundColor: CONSTANTS.PRIMARY_COLOR,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 12,
     gap: 8,
-    shadowColor: "#007AFF",
+    shadowColor: CONSTANTS.PRIMARY_COLOR,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
