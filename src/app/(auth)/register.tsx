@@ -237,12 +237,13 @@ export default function RegisterScreen() {
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
         style={styles.keyboardView}
       >
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 20 }} // Added padding for footer
+          contentContainerStyle={[{ paddingBottom: 20, flexGrow: 1 }]}
         >
           <Animated.View
             style={[

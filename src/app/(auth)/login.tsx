@@ -6,14 +6,12 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
-  Dimensions,
   Easing,
   Image,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -179,12 +177,13 @@ export default function LoginScreen() {
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
         style={styles.keyboardView}
       >
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { flexGrow: 1 }]}
         >
           <Animated.View
             style={[
@@ -196,12 +195,11 @@ export default function LoginScreen() {
             ]}
           >
             <View style={styles.header}>
-                <Image
-                  source={require("../../assets/images/eventiq-logo.png")}
-                  style={styles.logo}
-                  resizeMode="contain"
-                />
-              
+              <Image
+                source={require("../../assets/images/eventiq-logo.png")}
+                style={styles.logo}
+                resizeMode="contain"
+              />
 
               <Text style={styles.title}>Welcome Back</Text>
               <Text style={styles.subtitle}>
@@ -328,7 +326,7 @@ export default function LoginScreen() {
                 </Animated.View>
 
                 {/* Forgot Password */}
-                
+
                 {/* Sign Up Section - Moved inside form for better visibility */}
                 <View style={styles.signupSection}>
                   <View style={styles.divider}>

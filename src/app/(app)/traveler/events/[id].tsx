@@ -32,6 +32,7 @@ import {
 
 import { ReviewModal } from "../../../../components/ReviewModal";
 import { StarRating } from "../../../../components/StarRating";
+import { CONSTANTS } from "../../../../constants/constants";
 import {
   canUserReview,
   getOrganizerAverageRating,
@@ -40,7 +41,6 @@ import {
 
 const { width } = Dimensions.get("window");
 const IMAGE_HEIGHT = 250;
-import {CONSTANTS} from "../../../../constants/constants";
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -77,6 +77,16 @@ export default function EventDetailScreen() {
       checkReviewStatus();
     }
   }, [event, hasExistingBooking, profile?.id]);
+  const getEventStatus = () => {
+  if (!event) return "loading";
+  const now = new Date();
+  const start = new Date(event.start_time);
+  const end = new Date(event.end_time);
+
+  if (now < start) return "upcoming";
+  if (now >= start && now <= end) return "ongoing";
+  return "ended";
+};
 
   const loadEventDetails = async () => {
     try {
@@ -504,7 +514,11 @@ export default function EventDetailScreen() {
             </View>
 
             <View style={styles.infoRow}>
-              <Ionicons name="time-outline" size={20} color={CONSTANTS.PRIMARY_COLOR} />
+              <Ionicons
+                name="time-outline"
+                size={20}
+                color={CONSTANTS.PRIMARY_COLOR}
+              />
               <View style={styles.infoText}>
                 <Text style={styles.infoTitle}>Time</Text>
                 <Text style={styles.infoValue}>
@@ -526,7 +540,11 @@ export default function EventDetailScreen() {
             </View>
 
             <View style={styles.infoRow}>
-              <Ionicons name="people-outline" size={20} color={CONSTANTS.PRIMARY_COLOR} />
+              <Ionicons
+                name="people-outline"
+                size={20}
+                color={CONSTANTS.PRIMARY_COLOR}
+              />
               <View style={styles.infoText}>
                 <Text style={styles.infoTitle}>Available Seats</Text>
                 <Text style={styles.infoValue}>
@@ -1205,7 +1223,11 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   bookedCardHeader: { flexDirection: "row", alignItems: "center" },
-  bookedTitle: { fontSize: 18, fontWeight: "700", color: CONSTANTS.PRIMARY_COLOR },
+  bookedTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: CONSTANTS.PRIMARY_COLOR,
+  },
   bookedSubtitle: { fontSize: 14, color: "#555", marginTop: 2 },
   reviewCard: {
     backgroundColor: "#f4fef9",

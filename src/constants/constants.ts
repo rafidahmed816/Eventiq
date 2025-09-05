@@ -1,4 +1,4 @@
 export const CONSTANTS = {
   PRIMARY_COLOR: "#32DC96",
-  PRIMARY_COLOR_DARKER: "#28B87A", // Slightly darker version of the primary color
+  PRIMARY_COLOR_DARKER: "#28B87A", 
 };
