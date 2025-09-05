@@ -10,18 +10,21 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { CONSTANTS } from "../constants/constants";
 import { CreateEventData } from "../lib/organizer/events";
 import { CategoryPicker } from "./CategoryPicker";
 import { DateTimePickerComponent } from "./DateTimePicker";
 import { FormInput } from "./FormInput";
 import { ImagePickerModal } from "./ImagePickerModal";
 import { ImageSelectionGrid } from "./ImageSelectionGrid";
-import { CONSTANTS } from "../constants/constants";
+
 interface CreateEventModalProps {
   visible: boolean;
   onClose: () => void;
   onCreateEvent: (eventData: CreateEventData) => Promise<void>;
   creating: boolean;
+  // Optional callback for when event is successfully created
+  onEventCreated?: () => void;
 }
 
 export const CreateEventModal: React.FC<CreateEventModalProps> = ({
@@ -29,6 +32,7 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
   onClose,
   onCreateEvent,
   creating,
+  onEventCreated,
 }) => {
   const [formData, setFormData] = useState<CreateEventData>({
     title: "",
@@ -90,28 +94,39 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
     setSelectedImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async () => {
+  const validateForm = (): string | null => {
     if (!formData.title.trim()) {
-      Alert.alert("Error", "Please enter an event title");
-      return;
+      return "Please enter an event title";
     }
 
     if (formData.budget_per_person <= 0) {
-      Alert.alert("Error", "Please enter a valid budget per person");
-      return;
+      return "Please enter a valid budget per person";
     }
 
     if (formData.total_seats <= 0) {
-      Alert.alert("Error", "Please enter a valid number of seats");
-      return;
+      return "Please enter a valid number of seats";
     }
 
-    // Validate end time is after start time
+    // Validate dates
     const startDate = new Date(formData.start_time);
     const endDate = new Date(formData.end_time);
+    const now = new Date();
+
+    if (startDate <= now) {
+      return "Start time must be in the future";
+    }
 
     if (endDate <= startDate) {
-      Alert.alert("Error", "End time must be after start time");
+      return "End time must be after start time";
+    }
+
+    return null;
+  };
+
+  const handleSubmit = async () => {
+    const validationError = validateForm();
+    if (validationError) {
+      Alert.alert("Error", validationError);
       return;
     }
 
@@ -124,8 +139,11 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
       await onCreateEvent(eventDataWithImages);
       resetForm();
       onClose();
+      // Call the optional success callback
+      onEventCreated?.();
     } catch (error) {
-      // Error handling is done in parent component
+      console.error("Create event error:", error);
+      // Error is already handled in parent component
     }
   };
 
@@ -156,7 +174,10 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
             <Text style={styles.title}>Create Event</Text>
             <TouchableOpacity onPress={handleSubmit} disabled={creating}>
               {creating ? (
-                <ActivityIndicator size="small" color={CONSTANTS.PRIMARY_COLOR} />
+                <ActivityIndicator
+                  size="small"
+                  color={CONSTANTS.PRIMARY_COLOR}
+                />
               ) : (
                 <Text style={styles.saveButton}>Create</Text>
               )}
@@ -230,12 +251,13 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
             <FormInput
               label="Budget per Person ($)"
               value={formData.budget_per_person.toString()}
-              onChangeText={(text) =>
+              onChangeText={(text) => {
+                const numericValue = parseFloat(text.replace(/[^0-9.]/g, ""));
                 setFormData({
                   ...formData,
-                  budget_per_person: parseFloat(text) || 0,
-                })
-              }
+                  budget_per_person: isNaN(numericValue) ? 0 : numericValue,
+                });
+              }}
               placeholder="0.00"
               keyboardType="numeric"
               required
@@ -244,9 +266,15 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
             <FormInput
               label="Total Seats"
               value={formData.total_seats.toString()}
-              onChangeText={(text) =>
-                setFormData({ ...formData, total_seats: parseInt(text) || 1 })
-              }
+              onChangeText={(text) => {
+                const numericValue = parseInt(text.replace(/[^0-9]/g, ""));
+                setFormData({
+                  ...formData,
+                  total_seats: isNaN(numericValue)
+                    ? 1
+                    : Math.max(1, numericValue),
+                });
+              }}
               placeholder="1"
               keyboardType="numeric"
               required
@@ -255,12 +283,13 @@ export const CreateEventModal: React.FC<CreateEventModalProps> = ({
             <FormInput
               label="Cancellation Policy (hours before event)"
               value={formData.cancellation_policy?.toString() || ""}
-              onChangeText={(text) =>
+              onChangeText={(text) => {
+                const numericValue = parseInt(text.replace(/[^0-9]/g, ""));
                 setFormData({
                   ...formData,
-                  cancellation_policy: parseInt(text) || 24,
-                })
-              }
+                  cancellation_policy: isNaN(numericValue) ? 24 : numericValue,
+                });
+              }}
               placeholder="24"
               keyboardType="numeric"
             />
