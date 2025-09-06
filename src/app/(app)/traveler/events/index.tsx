@@ -20,10 +20,8 @@ import { SearchBar } from "../../../../components/SearchBar";
 import {
   EventsResponse,
   fetchTravelerEvents,
-  searchEvents,
   TravelerEvent,
 } from "../../../../lib/traveler/events";
-import { CONSTANTS } from "@/src/constants/constants";
 
 const ITEMS_PER_PAGE = 10;
 const SEARCH_DEBOUNCE_MS = 500;
@@ -69,6 +67,21 @@ export default function TravelerEventsScreen() {
     }, [loading, events.length])
   );
 
+  // Effect to reload events when filters are applied
+  useEffect(() => {
+    // We don't want this to run on initial mount, so we check if filters are not in their initial state.
+    const isInitialState =
+      activeFilters.categories.length === 0 &&
+      activeFilters.dates.length === 0 &&
+      activeFilters.durations.length === 0 &&
+      activeFilters.priceRanges.length === 0;
+
+    // Also, don't run if it's just the initial load.
+    if (!loading && !isInitialState) {
+      loadEvents(true);
+    }
+  }, [activeFilters]);
+
   // Debounced search effect
   useEffect(() => {
     if (searchTimeout) {
@@ -76,11 +89,8 @@ export default function TravelerEventsScreen() {
     }
 
     const timeout = setTimeout(() => {
-      if (searchQuery.trim() || selectedCategory !== "All") {
-        handleSearch();
-      } else {
-        loadEvents(true);
-      }
+      // Only trigger search from here. Filtering is handled by its own effect.
+      handleSearch();
     }, SEARCH_DEBOUNCE_MS);
 
     setSearchTimeout(timeout);
@@ -102,7 +112,10 @@ export default function TravelerEventsScreen() {
       const page = reset ? 1 : currentPage;
       const response: EventsResponse = await fetchTravelerEvents(
         page,
-        ITEMS_PER_PAGE
+        ITEMS_PER_PAGE,
+        searchQuery,
+        selectedCategory,
+        activeFilters
       );
 
       if (reset) {
@@ -137,20 +150,24 @@ export default function TravelerEventsScreen() {
   const handleSearch = async () => {
     try {
       setLoading(true);
-      const results = await searchEvents(
+      // Use fetchTravelerEvents to leverage filtering capabilities
+      const response = await fetchTravelerEvents(
+        1,
+        ITEMS_PER_PAGE,
         searchQuery,
-        selectedCategory === "All" ? undefined : selectedCategory
+        selectedCategory,
+        activeFilters
       );
 
       // Remove duplicates from search results
-      const uniqueResults = results.filter(
+      const uniqueResults = response.events.filter(
         (event, index, self) =>
           index === self.findIndex((e) => e.id === event.id)
       );
 
       setEvents(uniqueResults);
-      setHasMore(false); // Search results don't have pagination
-      setCurrentPage(1);
+      setHasMore(response.hasMore);
+      setCurrentPage(response.nextPage || 1);
     } catch (error) {
       console.error("Search error:", error);
       setEvents([]);
@@ -232,7 +249,7 @@ export default function TravelerEventsScreen() {
 
     return (
       <View style={styles.loadingFooter}>
-        <ActivityIndicator size="small" color={CONSTANTS.PRIMARY_COLOR} />
+        <ActivityIndicator size="small" color="#007AFF" />
         <Text style={styles.loadingText}>Loading more events...</Text>
       </View>
     );
@@ -274,6 +291,12 @@ export default function TravelerEventsScreen() {
         activeFiltersCount={getActiveFiltersCount()}
       />
 
+      {/* Category Filter */}
+      <CategoryFilter
+        selectedCategory={selectedCategory}
+        onCategoryChange={handleCategoryChange}
+      />
+
       {/* Events List */}
       <FlatList
         data={events}
@@ -284,7 +307,7 @@ export default function TravelerEventsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={CONSTANTS.PRIMARY_COLOR}
+            tintColor="#007AFF"
           />
         }
         onEndReached={handleLoadMore}
@@ -297,7 +320,7 @@ export default function TravelerEventsScreen() {
       {/* Loading Overlay */}
       {loading && events.length === 0 && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={CONSTANTS.PRIMARY_COLOR} />
+          <ActivityIndicator size="large" color="#007AFF" />
           <Text style={styles.loadingText}>Loading events...</Text>
         </View>
       )}

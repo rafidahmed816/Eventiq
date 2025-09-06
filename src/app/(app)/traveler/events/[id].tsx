@@ -78,15 +78,15 @@ export default function EventDetailScreen() {
     }
   }, [event, hasExistingBooking, profile?.id]);
   const getEventStatus = () => {
-  if (!event) return "loading";
-  const now = new Date();
-  const start = new Date(event.start_time);
-  const end = new Date(event.end_time);
+    if (!event) return "loading";
+    const now = new Date();
+    const start = new Date(event.start_time);
+    const end = new Date(event.end_time);
 
-  if (now < start) return "upcoming";
-  if (now >= start && now <= end) return "ongoing";
-  return "ended";
-};
+    if (now < start) return "upcoming";
+    if (now >= start && now <= end) return "ongoing";
+    return "ended";
+  };
 
   const loadEventDetails = async () => {
     try {
@@ -399,7 +399,7 @@ export default function EventDetailScreen() {
       </View>
     );
   }
-
+  const event_status = getEventStatus();
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -629,118 +629,173 @@ export default function EventDetailScreen() {
 
           {/* Booking / Review Section integrated in scroll */}
           <View>
-            {canReview && !hasReviewed && profile ? (
-              <View style={styles.reviewCard}>
-                <View style={styles.reviewCardHeader}>
-                  <Ionicons
-                    name="star-outline"
-                    size={28}
-                    color={CONSTANTS.PRIMARY_COLOR}
-                  />
-                  <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={styles.reviewCardTitle}>
-                      Share Your Experience
-                    </Text>
-                    <Text style={styles.reviewCardSubtitle}>
-                      Rate and review{" "}
-                      {event.organizer?.full_name || "the organizer"}
+            {getEventStatus() === "ended" ? (
+              // Only show review section after event has ended
+              <>
+                {canReview && !hasReviewed && profile ? (
+                  <View style={styles.reviewCard}>
+                    <View style={styles.reviewCardHeader}>
+                      <Ionicons
+                        name="star-outline"
+                        size={28}
+                        color={CONSTANTS.PRIMARY_COLOR}
+                      />
+                      <View style={{ flex: 1, marginLeft: 12 }}>
+                        <Text style={styles.reviewCardTitle}>
+                          Share Your Experience
+                        </Text>
+                        <Text style={styles.reviewCardSubtitle}>
+                          Rate and review{" "}
+                          {event.organizer?.full_name || "the organizer"}
+                        </Text>
+                      </View>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.primaryButton}
+                      onPress={() => setShowReviewModal(true)}
+                    >
+                      <Text style={styles.primaryButtonText}>
+                        Rate & Review
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : hasReviewed ? (
+                  <View style={styles.thanksCard}>
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={28}
+                      color="#4CAF50"
+                    />
+                    <Text style={styles.thanksText}>
+                      Thank you for your review!
                     </Text>
                   </View>
-                </View>
-                <TouchableOpacity
-                  style={styles.primaryButton}
-                  onPress={() => setShowReviewModal(true)}
-                >
-                  <Text style={styles.primaryButtonText}>Rate & Review</Text>
-                </TouchableOpacity>
-              </View>
-            ) : hasReviewed ? (
-              <View style={styles.thanksCard}>
-                <Ionicons name="checkmark-circle" size={28} color="#4CAF50" />
-                <Text style={styles.thanksText}>
-                  Thank you for your review!
-                </Text>
-              </View>
-            ) : hasExistingBooking && existingBooking ? (
-              <View style={styles.bookedCard}>
-                <View style={styles.bookedCardHeader}>
-                  <Ionicons
-                    name="ticket-outline"
-                    size={24}
-                    color={CONSTANTS.PRIMARY_COLOR}
-                  />
-                  <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={styles.bookedTitle}>You're booked!</Text>
-                    <Text style={styles.bookedSubtitle}>
-                      {existingBooking.seats_requested} seat
-                      {existingBooking.seats_requested > 1 ? "s" : ""} reserved
-                    </Text>
+                ) : hasExistingBooking ? (
+                  <View style={styles.bookedCard}>
+                    <View style={styles.bookedCardHeader}>
+                      <Ionicons
+                        name="ticket-outline"
+                        size={24}
+                        color={CONSTANTS.PRIMARY_COLOR}
+                      />
+                      <View style={{ flex: 1, marginLeft: 12 }}>
+                        <Text style={styles.bookedTitle}>Event Completed</Text>
+                        <Text style={styles.bookedSubtitle}>
+                          You attended this event with{" "}
+                          {existingBooking?.seats_requested} seat
+                          {(existingBooking?.seats_requested || 0) > 1
+                            ? "s"
+                            : ""}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
-                  <CancelBookingButton
-                    booking={existingBooking}
-                    onCancel={handleCancelBooking}
-                    disabled={cancelling}
-                  />
-                </View>
-              </View>
+                ) : null}
+              </>
             ) : (
-              <View style={styles.bookingCard}>
-                <View style={styles.priceBlock}>
-                  <Text style={styles.totalPrice}>
-                    ${(event.budget_per_person * seatsRequested).toFixed(2)}
-                  </Text>
-                  <Text style={styles.priceSubtext}>
-                    {seatsRequested} seat{seatsRequested > 1 ? "s" : ""}
-                  </Text>
-                </View>
-                <View style={styles.seatSelector}>
-                  <TouchableOpacity
-                    style={[
-                      styles.seatButton,
-                      seatsRequested <= 1 && styles.seatButtonDisabled,
-                    ]}
-                    onPress={() =>
-                      setSeatsRequested(Math.max(1, seatsRequested - 1))
-                    }
-                    disabled={seatsRequested <= 1}
-                  >
-                    <Text style={styles.seatButtonText}>-</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.seatCount}>{seatsRequested}</Text>
-                  <TouchableOpacity
-                    style={[
-                      styles.seatButton,
-                      seatsRequested >= event.spots_remaining &&
-                        styles.seatButtonDisabled,
-                    ]}
-                    onPress={() =>
-                      setSeatsRequested(
-                        Math.min(event.spots_remaining, seatsRequested + 1)
-                      )
-                    }
-                    disabled={seatsRequested >= event.spots_remaining}
-                  >
-                    <Text style={styles.seatButtonText}>+</Text>
-                  </TouchableOpacity>
-                </View>
-                <TouchableOpacity
-                  style={[
-                    styles.primaryButton,
-                    (booking || event.spots_remaining === 0) &&
-                      styles.primaryButtonDisabled,
-                  ]}
-                  onPress={handleBooking}
-                  disabled={booking || event.spots_remaining === 0}
-                >
-                  {booking ? (
-                    <ActivityIndicator size="small" color="white" />
-                  ) : (
-                    <Text style={styles.primaryButtonText}>
-                      {event.spots_remaining === 0 ? "Sold Out" : "Book Now"}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              </View>
+              // Show booking section for upcoming and ongoing events
+              <>
+                {hasExistingBooking && existingBooking ? (
+                  <View style={styles.bookedCard}>
+                    <View style={styles.bookedCardHeader}>
+                      <Ionicons
+                        name="ticket-outline"
+                        size={24}
+                        color={CONSTANTS.PRIMARY_COLOR}
+                      />
+                      <View style={{ flex: 1, marginLeft: 12 }}>
+                        <Text style={styles.bookedTitle}>You're booked!</Text>
+                        <Text style={styles.bookedSubtitle}>
+                          {existingBooking.seats_requested} seat
+                          {existingBooking.seats_requested > 1 ? "s" : ""}{" "}
+                          reserved
+                        </Text>
+                      </View>
+                    </View>
+                    <CancelBookingButton
+                      booking={existingBooking}
+                      onCancel={handleCancelBooking}
+                      disabled={cancelling || getEventStatus() !== "upcoming"}
+                    />
+                  </View>
+                ) : (
+                  <View style={styles.bookingCard}>
+                    <View style={styles.priceBlock}>
+                      <Text style={styles.totalPrice}>
+                        ${(event.budget_per_person * seatsRequested).toFixed(2)}
+                      </Text>
+                      <Text style={styles.priceSubtext}>
+                        {seatsRequested} seat{seatsRequested > 1 ? "s" : ""}
+                      </Text>
+                    </View>
+                    <View style={styles.seatSelector}>
+                      <TouchableOpacity
+                        style={[
+                          styles.seatButton,
+                          (seatsRequested <= 1 ||
+                            getEventStatus() !== "upcoming") &&
+                            styles.seatButtonDisabled,
+                        ]}
+                        onPress={() =>
+                          setSeatsRequested(Math.max(1, seatsRequested - 1))
+                        }
+                        disabled={
+                          seatsRequested <= 1 || getEventStatus() !== "upcoming"
+                        }
+                      >
+                        <Text style={styles.seatButtonText}>-</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.seatCount}>{seatsRequested}</Text>
+                      <TouchableOpacity
+                        style={[
+                          styles.seatButton,
+                          (seatsRequested >= event.spots_remaining ||
+                            getEventStatus() !== "upcoming") &&
+                            styles.seatButtonDisabled,
+                        ]}
+                        onPress={() =>
+                          setSeatsRequested(
+                            Math.min(event.spots_remaining, seatsRequested + 1)
+                          )
+                        }
+                        disabled={
+                          seatsRequested >= event.spots_remaining ||
+                          getEventStatus() !== "upcoming"
+                        }
+                      >
+                        <Text style={styles.seatButtonText}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <TouchableOpacity
+                      style={[
+                        styles.primaryButton,
+                        (booking ||
+                          event.spots_remaining === 0 ||
+                          getEventStatus() !== "upcoming") &&
+                          styles.primaryButtonDisabled,
+                      ]}
+                      onPress={handleBooking}
+                      disabled={
+                        booking ||
+                        event.spots_remaining === 0 ||
+                        getEventStatus() !== "upcoming"
+                      }
+                    >
+                      {booking ? (
+                        <ActivityIndicator size="small" color="white" />
+                      ) : (
+                        <Text style={styles.primaryButtonText}>
+                          {getEventStatus() === "ongoing"
+                            ? "Event Started"
+                            : event.spots_remaining === 0
+                            ? "Sold Out"
+                            : "Book Now"}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </>
             )}
           </View>
 

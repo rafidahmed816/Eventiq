@@ -23,12 +23,20 @@ export interface EventsResponse {
   nextPage: number | null;
 }
 
+export interface FilterOptions {
+  categories: string[];
+  priceRanges: string[];
+  durations: string[];
+  dates: string[];
+}
+
 // Fetch events with pagination and search
 export const fetchTravelerEvents = async (
   page: number = 1,
   limit: number = 10,
   searchQuery?: string,
-  category?: string
+  category?: string,
+  filters?: Partial<FilterOptions>
 ): Promise<EventsResponse> => {
   const offset = (page - 1) * limit;
 
@@ -62,9 +70,111 @@ export const fetchTravelerEvents = async (
     );
   }
 
-  // Apply category filter
+  // Apply category filter from the top bar
   if (category && category !== "All") {
     query = query.eq("category", category);
+  }
+
+  // Apply advanced filters from modal
+  if (filters) {
+    // Category filter from modal
+    if (filters.categories && filters.categories.length > 0) {
+      query = query.in("category", filters.categories);
+    }
+
+    // Price range filter
+    if (filters.priceRanges && filters.priceRanges.length > 0) {
+      const priceConditions = filters.priceRanges
+        .map((range) => {
+          if (range.includes("+")) {
+            const min = parseInt(range.replace("+", ""), 10);
+            return `budget_per_person.gte.${min}`;
+          }
+          const [min, max] = range.split("-");
+          return `and(budget_per_person.gte.${min},budget_per_person.lte.${max})`;
+        })
+        .join(",");
+      query = query.or(priceConditions);
+    }
+
+    // Duration filter
+    if (filters.durations && filters.durations.length > 0) {
+      const durationConditions = filters.durations
+        .map((range) => {
+          if (range.includes("+")) {
+            const min = parseInt(range.replace("+", ""), 10);
+            return `duration_minutes.gte.${min}`;
+          }
+          const [min, max] = range.split("-");
+          return `and(duration_minutes.gte.${min},duration_minutes.lte.${max})`;
+        })
+        .join(",");
+      query = query.or(durationConditions);
+    }
+
+    // Date filter
+    if (filters.dates && filters.dates.length > 0) {
+      const dateConditions = filters.dates
+        .map((date) => {
+          const now = new Date();
+          let startDate: Date | null = null;
+          let endDate: Date | null = null;
+
+          switch (date) {
+            case "today":
+              startDate = new Date(now.setHours(0, 0, 0, 0));
+              endDate = new Date(now.setHours(23, 59, 59, 999));
+              break;
+            case "tomorrow":
+              const tomorrow = new Date(now);
+              tomorrow.setDate(now.getDate() + 1);
+              startDate = new Date(tomorrow.setHours(0, 0, 0, 0));
+              endDate = new Date(tomorrow.setHours(23, 59, 59, 999));
+              break;
+            case "week":
+              startDate = new Date(now.setHours(0, 0, 0, 0));
+              const endOfWeek = new Date(startDate);
+              endOfWeek.setDate(startDate.getDate() + (7 - startDate.getDay()));
+              endDate = new Date(endOfWeek.setHours(23, 59, 59, 999));
+              break;
+            case "month":
+              startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+              endDate = new Date(
+                now.getFullYear(),
+                now.getMonth() + 1,
+                0,
+                23,
+                59,
+                59,
+                999
+              );
+              break;
+            case "next-month":
+              startDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+              endDate = new Date(
+                now.getFullYear(),
+                now.getMonth() + 2,
+                0,
+                23,
+                59,
+                59,
+                999
+              );
+              break;
+          }
+
+          if (startDate && endDate) {
+            return `and(start_time.gte.${startDate.toISOString()},start_time.lte.${endDate.toISOString()})`;
+          }
+          return "";
+        })
+        .filter(Boolean)
+        .join(",");
+
+      if (dateConditions) {
+        query = query.or(dateConditions);
+      }
+    }
   }
 
   const { data, error, count } = await query;

@@ -13,13 +13,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { CONSTANTS } from "../constants/constants";
 import { MessagingService } from "../lib/messaging";
 import type {
   ConversationWithDetails,
   Message,
   Profile,
 } from "../types/messaging";
-import { CONSTANTS } from "../constants/constants";
 export { ChatScreen };
 
 interface ChatScreenProps {
@@ -133,16 +133,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({
   const sendMessage = async () => {
     if (!messageText.trim() || sending) return;
 
-    const tempMessage: Message = {
-      id: `temp-${Date.now()}`,
-      conversation_id: conversationId,
-      sender_id: currentUser.id,
-      content: messageText.trim(),
-      sent_at: new Date().toISOString(),
-      sender: currentUser,
-    };
-
-    setMessages((prev) => [...prev, tempMessage]);
+    const messageContent = messageText.trim();
     setMessageText("");
     setSending(true);
 
@@ -150,13 +141,17 @@ const ChatScreen: React.FC<ChatScreenProps> = ({
       const newMessage = await MessagingService.sendMessage({
         conversation_id: conversationId,
         sender_id: currentUser.id,
-        content: messageText.trim(),
+        content: messageContent,
       });
 
-      // Replace temp message with real message
-      setMessages((prev) =>
-        prev.map((msg) => (msg.id === tempMessage.id ? newMessage : msg))
-      );
+      // Add message to state (the subscription will handle this too, but we add it here for immediate UI feedback)
+      setMessages((prev) => {
+        // Avoid duplicates by checking if message already exists
+        if (prev.some((msg) => msg.id === newMessage.id)) {
+          return prev;
+        }
+        return [...prev, newMessage];
+      });
 
       // Scroll to bottom
       setTimeout(() => {
@@ -164,10 +159,8 @@ const ChatScreen: React.FC<ChatScreenProps> = ({
       }, 100);
     } catch (error) {
       console.error("Error sending message:", error);
-      // Remove temp message on error
-      setMessages((prev) => prev.filter((msg) => msg.id !== tempMessage.id));
       Alert.alert("Error", "Failed to send message");
-      setMessageText(tempMessage.content);
+      setMessageText(messageContent); // Restore the message text on error
     } finally {
       setSending(false);
     }
@@ -184,8 +177,19 @@ const ChatScreen: React.FC<ChatScreenProps> = ({
         if (payload.eventType === "INSERT") {
           const newMessage = payload.new as Message;
           setMessages((prev) => {
-            // Avoid duplicates
-            if (prev.some((msg) => msg.id === newMessage.id)) {
+            // Avoid duplicates by checking both ID and content+timestamp
+            const isDuplicate = prev.some(
+              (msg) =>
+                msg.id === newMessage.id ||
+                (msg.content === newMessage.content &&
+                  msg.sender_id === newMessage.sender_id &&
+                  Math.abs(
+                    new Date(msg.sent_at).getTime() -
+                      new Date(newMessage.sent_at).getTime()
+                  ) < 1000)
+            );
+
+            if (isDuplicate) {
               return prev;
             }
             return [...prev, newMessage];
@@ -212,7 +216,11 @@ const ChatScreen: React.FC<ChatScreenProps> = ({
     return (
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Ionicons name="arrow-back" size={24} color={CONSTANTS.PRIMARY_COLOR} />
+          <Ionicons
+            name="arrow-back"
+            size={24}
+            color={CONSTANTS.PRIMARY_COLOR}
+          />
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>
