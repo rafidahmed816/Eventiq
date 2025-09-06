@@ -1,5 +1,4 @@
 // app/(app)/organizer/dashboard.tsx
-import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -8,9 +7,9 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // Fixed imports based on the actual exported function names
 import {
@@ -148,7 +147,7 @@ const OrganizerDashboard: React.FC = () => {
   }
 
   return (
-    <>
+    <SafeAreaView style={styles.container}>
       <ScrollView
         style={styles.container}
         refreshControl={
@@ -158,17 +157,11 @@ const OrganizerDashboard: React.FC = () => {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.welcomeText}>Welcome back,</Text>
-            <Text style={styles.nameText}>
-              {profile?.full_name || "Organizer"}
+            <Text style={styles.headerTitle}>Dashboard</Text>
+            <Text style={styles.headerSubtitle}>
+              An overview of your events and bookings
             </Text>
           </View>
-          <TouchableOpacity
-            style={styles.profileButton}
-            onPress={() => router.push("/organizer/profile")}
-          >
-            <Ionicons name="person-circle-outline" size={32} color="#666" />
-          </TouchableOpacity>
         </View>
 
         {/* Stats Overview */}
@@ -221,7 +214,7 @@ const OrganizerDashboard: React.FC = () => {
         onCreateEvent={handleCreateEvent}
         creating={creating}
       />
-    </>
+    </SafeAreaView>
   );
 };
 
@@ -238,24 +231,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    backgroundColor: "white",
     paddingHorizontal: 20,
     paddingVertical: 20,
-    backgroundColor: "white",
     borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
+    borderBottomColor: "#f0f0f0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  welcomeText: {
-    fontSize: 14,
-    color: "#666",
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#1a1a1a",
     marginBottom: 4,
   },
-  nameText: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  profileButton: {
-    padding: 8,
+  headerSubtitle: {
+    fontSize: 14,
+    color: "#666",
+    fontWeight: "500",
   },
   bottomSpacing: {
     height: 20,

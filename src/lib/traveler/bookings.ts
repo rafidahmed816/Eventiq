@@ -28,6 +28,7 @@ export interface CreateBookingData {
   event_id: string;
   traveler_id: string;
   seats_requested: number;
+  amount_paid?: number;
 }
 
 // Create a new booking
@@ -46,7 +47,7 @@ export const createBooking = async (
   // Check if event has enough spots
   const { data: event, error: eventError } = await supabase
     .from("events")
-    .select("spots_remaining, total_seats, title")
+    .select("spots_remaining, total_seats, title, budget_per_person")
     .eq("id", bookingData.event_id)
     .single();
 
@@ -59,6 +60,12 @@ export const createBooking = async (
   if (event.spots_remaining <= 0) {
     throw new Error("Event is fully booked");
   }
+
+  // Calculate amount_paid if not provided
+  const amount_paid =
+    bookingData.amount_paid !== undefined
+      ? bookingData.amount_paid
+      : event.budget_per_person * bookingData.seats_requested;
 
   // Use a transaction-like approach with retry logic
   let attempts = 0;
@@ -80,6 +87,7 @@ export const createBooking = async (
         .insert({
           ...bookingData,
           status,
+          amount_paid,
         })
         .select()
         .single();
